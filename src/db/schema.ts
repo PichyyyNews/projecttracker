@@ -19,6 +19,21 @@ export const users = pgTable("users", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const departments = pgTable("departments", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 255 }).notNull().unique(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const academicClasses = pgTable("academic_classes", {
+  id: serial("id").primaryKey(),
+  yearLevel: varchar("year_level", { length: 50 }).notNull(), // เช่น ปวส ปี 1, ปวส ปี 2
+  studyGroup: varchar("study_group", { length: 50 }).notNull(), // เช่น 1, 2, 3, 4
+  major: varchar("major", { length: 255 }).notNull(), // เช่น เทคโนโลยีคอมพิวเตอร์ (สทค)
+  departmentId: serial("department_id"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const systemConfigs = pgTable("system_configs", {
   id: serial("id").primaryKey(),
   key: varchar("key", { length: 100 }).notNull().unique(),
@@ -48,6 +63,10 @@ export const tasks = pgTable("tasks", {
 
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
+export type Department = typeof departments.$inferSelect;
+export type NewDepartment = typeof departments.$inferInsert;
+export type AcademicClass = typeof academicClasses.$inferSelect;
+export type NewAcademicClass = typeof academicClasses.$inferInsert;
 export type SystemConfig = typeof systemConfigs.$inferSelect;
 export type NewSystemConfig = typeof systemConfigs.$inferInsert;
 export type Project = typeof projects.$inferSelect;

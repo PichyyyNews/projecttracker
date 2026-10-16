@@ -18,13 +18,12 @@ import {
   FloppyDisk,
   Key,
   Shield,
-  Gear,
-  Kanban,
   ChartBar,
   Database,
-  ListDashes,
-  UserCheck,
   UserCircle,
+  GraduationCap,
+  CloudArrowUp,
+  Plus,
 } from "@phosphor-icons/react";
 import UserAvatar from "@/components/UserAvatar";
 import { USER_ROLES, ROLE_OPTIONS, UserRole } from "@/lib/roles";
@@ -47,7 +46,29 @@ interface GoogleConfigData {
   is_configured: boolean;
 }
 
-type AdminSection = "users" | "google" | "overview" | "system";
+interface MinioConfigData {
+  minio_endpoint: string;
+  minio_port: string;
+  minio_use_ssl: boolean;
+  minio_access_key: string;
+  minio_secret_key: string;
+  minio_bucket: string;
+  minio_public_url: string;
+}
+
+interface DepartmentItem {
+  id: number;
+  name: string;
+}
+
+interface AcademicClassItem {
+  id: number;
+  yearLevel: string;
+  studyGroup: string;
+  major: string;
+}
+
+type AdminSection = "users" | "academic" | "minio" | "google" | "overview" | "system";
 
 export default function AdminPage() {
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
@@ -64,6 +85,24 @@ export default function AdminPage() {
     google_redirect_uri: "http://localhost:3000/api/auth/google/callback",
     is_configured: false,
   });
+  const [minioConfig, setMinioConfig] = useState<MinioConfigData>({
+    minio_endpoint: "localhost",
+    minio_port: "9000",
+    minio_use_ssl: false,
+    minio_access_key: "minioadmin",
+    minio_secret_key: "",
+    minio_bucket: "avatars",
+    minio_public_url: "http://localhost:9000/avatars",
+  });
+
+  // Academic Management State
+  const [departmentsList, setDepartmentsList] = useState<DepartmentItem[]>([]);
+  const [academicClassesList, setAcademicClassesList] = useState<AcademicClassItem[]>([]);
+  const [newDeptName, setNewDeptName] = useState("");
+  const [newClassYear, setNewClassYear] = useState("ปวส ปี 1");
+  const [newClassGroup, setNewClassGroup] = useState("1");
+  const [newClassMajor, setNewClassMajor] = useState("");
+
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [saveLoading, setSaveLoading] = useState(false);
 
@@ -86,9 +125,11 @@ export default function AdminPage() {
 
   const loadAdminData = async () => {
     try {
-      const [uRes, gRes] = await Promise.all([
+      const [uRes, gRes, mRes, aRes] = await Promise.all([
         fetch("/api/admin/users"),
         fetch("/api/admin/google-config"),
+        fetch("/api/admin/minio-config"),
+        fetch("/api/admin/academic"),
       ]);
 
       if (uRes.ok) {
@@ -99,6 +140,19 @@ export default function AdminPage() {
       if (gRes.ok) {
         const gData = await gRes.json();
         if (gData.success) setGoogleConfig(gData.data);
+      }
+
+      if (mRes.ok) {
+        const mData = await mRes.json();
+        if (mData.success) setMinioConfig(mData.data);
+      }
+
+      if (aRes.ok) {
+        const aData = await aRes.json();
+        if (aData.success) {
+          setDepartmentsList(aData.departments);
+          setAcademicClassesList(aData.academicClasses);
+        }
       }
     } catch (err) {
       console.error("Failed to load admin data", err);
@@ -184,6 +238,109 @@ export default function AdminPage() {
     }
   };
 
+  // Academic Handlers
+  const handleAddDepartment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newDeptName.trim()) return;
+
+    try {
+      const res = await fetch("/api/admin/academic", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "department", name: newDeptName.trim() }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setDepartmentsList([...departmentsList, data.data]);
+        setNewDeptName("");
+      } else {
+        alert(data.error || "Failed to add department");
+      }
+    } catch (err) {
+      alert("Error adding department");
+    }
+  };
+
+  const handleDeleteDepartment = async (id: number) => {
+    if (!confirm("Delete this department?")) return;
+    try {
+      const res = await fetch(`/api/admin/academic?type=department&id=${id}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setDepartmentsList(departmentsList.filter((d) => d.id !== id));
+      }
+    } catch (err) {
+      alert("Error deleting department");
+    }
+  };
+
+  const handleAddAcademicClass = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newClassMajor.trim()) return;
+
+    try {
+      const res = await fetch("/api/admin/academic", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "academic_class",
+          yearLevel: newClassYear,
+          studyGroup: newClassGroup,
+          major: newClassMajor.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setAcademicClassesList([...academicClassesList, data.data]);
+        setNewClassMajor("");
+      } else {
+        alert(data.error || "Failed to add academic class");
+      }
+    } catch (err) {
+      alert("Error adding class");
+    }
+  };
+
+  const handleDeleteAcademicClass = async (id: number) => {
+    if (!confirm("Delete this class group?")) return;
+    try {
+      const res = await fetch(`/api/admin/academic?type=academic_class&id=${id}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setAcademicClassesList(academicClassesList.filter((c) => c.id !== id));
+      }
+    } catch (err) {
+      alert("Error deleting class");
+    }
+  };
+
+  // Save MinIO Config
+  const handleSaveMinioConfig = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaveLoading(true);
+    setSaveMessage(null);
+
+    try {
+      const res = await fetch("/api/admin/minio-config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(minioConfig),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || "Failed to save");
+
+      setSaveMessage("MinIO Object Storage settings updated successfully!");
+    } catch (err: any) {
+      alert(err.message || "Error saving MinIO config");
+    } finally {
+      setSaveLoading(false);
+    }
+  };
+
+  // Save Google Config
   const handleSaveGoogleConfig = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaveLoading(true);
@@ -201,9 +358,7 @@ export default function AdminPage() {
       });
 
       const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || "Failed to save configuration");
-      }
+      if (!res.ok || !data.success) throw new Error(data.error || "Failed to save");
 
       setSaveMessage("Google OAuth settings updated successfully!");
       setGoogleConfig({ ...googleConfig, is_configured: true });
@@ -280,7 +435,7 @@ export default function AdminPage() {
             </div>
             <div className="flex flex-col">
               <span className="font-semibold text-kumo-default text-sm">Admin console</span>
-              <span className="text-[11px] text-kumo-subtle"></span>
+              <span className="text-[11px] text-kumo-subtle">PIN 030347 Verified</span>
             </div>
           </div>
 
@@ -292,7 +447,7 @@ export default function AdminPage() {
             <div className="grid gap-1">
               <button
                 type="button"
-                onClick={() => setActiveSection("users")}
+                onClick={() => { setActiveSection("users"); setSaveMessage(null); }}
                 className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition-none ${
                   activeSection === "users"
                     ? "bg-kumo-tint text-kumo-brand"
@@ -308,7 +463,39 @@ export default function AdminPage() {
 
               <button
                 type="button"
-                onClick={() => setActiveSection("google")}
+                onClick={() => { setActiveSection("academic"); setSaveMessage(null); }}
+                className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition-none ${
+                  activeSection === "academic"
+                    ? "bg-kumo-tint text-kumo-brand"
+                    : "text-kumo-default hover:bg-kumo-tint"
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <GraduationCap weight="thin" size={18} />
+                  <span>Academic & Classes</span>
+                </div>
+                <Badge variant="neutral">{academicClassesList.length}</Badge>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => { setActiveSection("minio"); setSaveMessage(null); }}
+                className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition-none ${
+                  activeSection === "minio"
+                    ? "bg-kumo-tint text-kumo-brand"
+                    : "text-kumo-default hover:bg-kumo-tint"
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <CloudArrowUp weight="thin" size={18} />
+                  <span>MinIO Storage</span>
+                </div>
+                <Badge variant="info">Storage</Badge>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => { setActiveSection("google"); setSaveMessage(null); }}
                 className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition-none ${
                   activeSection === "google"
                     ? "bg-kumo-tint text-kumo-brand"
@@ -333,7 +520,7 @@ export default function AdminPage() {
             <div className="grid gap-1">
               <button
                 type="button"
-                onClick={() => setActiveSection("overview")}
+                onClick={() => { setActiveSection("overview"); setSaveMessage(null); }}
                 className={`flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-none ${
                   activeSection === "overview"
                     ? "bg-kumo-tint text-kumo-brand"
@@ -346,7 +533,7 @@ export default function AdminPage() {
 
               <button
                 type="button"
-                onClick={() => setActiveSection("system")}
+                onClick={() => { setActiveSection("system"); setSaveMessage(null); }}
                 className={`flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-none ${
                   activeSection === "system"
                     ? "bg-kumo-tint text-kumo-brand"
@@ -397,42 +584,34 @@ export default function AdminPage() {
           <button
             onClick={() => setActiveSection("users")}
             className={`whitespace-nowrap px-3 py-2 text-xs font-medium border-b-2 ${
-              activeSection === "users"
-                ? "border-kumo-brand text-kumo-brand"
-                : "border-transparent text-kumo-subtle"
+              activeSection === "users" ? "border-kumo-brand text-kumo-brand" : "border-transparent text-kumo-subtle"
             }`}
           >
             Users ({usersList.length})
           </button>
           <button
+            onClick={() => setActiveSection("academic")}
+            className={`whitespace-nowrap px-3 py-2 text-xs font-medium border-b-2 ${
+              activeSection === "academic" ? "border-kumo-brand text-kumo-brand" : "border-transparent text-kumo-subtle"
+            }`}
+          >
+            Academic ({academicClassesList.length})
+          </button>
+          <button
+            onClick={() => setActiveSection("minio")}
+            className={`whitespace-nowrap px-3 py-2 text-xs font-medium border-b-2 ${
+              activeSection === "minio" ? "border-kumo-brand text-kumo-brand" : "border-transparent text-kumo-subtle"
+            }`}
+          >
+            MinIO
+          </button>
+          <button
             onClick={() => setActiveSection("google")}
             className={`whitespace-nowrap px-3 py-2 text-xs font-medium border-b-2 ${
-              activeSection === "google"
-                ? "border-kumo-brand text-kumo-brand"
-                : "border-transparent text-kumo-subtle"
+              activeSection === "google" ? "border-kumo-brand text-kumo-brand" : "border-transparent text-kumo-subtle"
             }`}
           >
             Google OAuth
-          </button>
-          <button
-            onClick={() => setActiveSection("overview")}
-            className={`whitespace-nowrap px-3 py-2 text-xs font-medium border-b-2 ${
-              activeSection === "overview"
-                ? "border-kumo-brand text-kumo-brand"
-                : "border-transparent text-kumo-subtle"
-            }`}
-          >
-            Overview
-          </button>
-          <button
-            onClick={() => setActiveSection("system")}
-            className={`whitespace-nowrap px-3 py-2 text-xs font-medium border-b-2 ${
-              activeSection === "system"
-                ? "border-kumo-brand text-kumo-brand"
-                : "border-transparent text-kumo-subtle"
-            }`}
-          >
-            Database
           </button>
         </div>
 
@@ -447,7 +626,7 @@ export default function AdminPage() {
                   <Badge variant="neutral">{usersList.length} registered</Badge>
                 </div>
                 <p className="text-xs text-kumo-subtle">
-                  Manage accounts, suspend access, or remove users from PostgreSQL database.
+                  Manage accounts, roles, suspend access, or remove users from PostgreSQL database.
                 </p>
               </div>
 
@@ -548,11 +727,294 @@ export default function AdminPage() {
             </div>
           )}
 
-          {/* 2. GOOGLE OAUTH CONFIGURATION VIEW */}
+          {/* 2. ACADEMIC & CLASS GROUPS MANAGEMENT VIEW */}
+          {activeSection === "academic" && (
+            <div className="grid gap-6">
+              <div className="flex flex-col gap-1">
+                <h1 className="text-xl font-semibold text-kumo-default">
+                  Academic & class groups management
+                </h1>
+                <p className="text-xs text-kumo-subtle">
+                  Add, edit, or remove Departments, Year Levels, and Class Groups for student registration.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                {/* Departments Card */}
+                <LayerCard className="p-5 ring ring-kumo-line rounded-lg bg-kumo-base">
+                  <div className="mb-4 flex items-center justify-between">
+                    <div>
+                      <h2 className="text-sm font-semibold text-kumo-default">Departments (แผนกวิชา)</h2>
+                      <p className="text-xs text-kumo-subtle">
+                        {departmentsList.length} departments available
+                      </p>
+                    </div>
+                  </div>
+
+                  <form onSubmit={handleAddDepartment} className="mb-4 flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Add new department name..."
+                      value={newDeptName}
+                      onChange={(e) => setNewDeptName(e.target.value)}
+                      required
+                      className="flex-1 rounded border border-kumo-line bg-kumo-control py-1 px-2.5 text-xs text-kumo-default focus:border-kumo-brand focus:outline-none"
+                    />
+                    <Button variant="primary" size="sm" type="submit">
+                      <Plus weight="thin" size={14} className="mr-1" />
+                      <span>Add</span>
+                    </Button>
+                  </form>
+
+                  <div className="divide-y divide-kumo-line rounded border border-kumo-line">
+                    {departmentsList.map((dept) => (
+                      <div key={dept.id} className="flex items-center justify-between p-2.5 text-xs">
+                        <span className="font-medium text-kumo-default">{dept.name}</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteDepartment(dept.id)}
+                        >
+                          <Trash weight="thin" size={14} className="text-red-500" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </LayerCard>
+
+                {/* Add Academic Class Form */}
+                <LayerCard className="p-5 ring ring-kumo-line rounded-lg bg-kumo-base">
+                  <h2 className="mb-1 text-sm font-semibold text-kumo-default">
+                    Add new class group (เพิ่มชั้นปี/กลุ่ม/สาขา)
+                  </h2>
+                  <p className="mb-4 text-xs text-kumo-subtle">
+                    Creates an option in the student profile registration dropdown.
+                  </p>
+
+                  <form onSubmit={handleAddAcademicClass} className="grid gap-3">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="grid gap-1">
+                        <label className="text-xs font-medium text-kumo-default">Year Level (ชั้นปี)</label>
+                        <select
+                          value={newClassYear}
+                          onChange={(e) => setNewClassYear(e.target.value)}
+                          className="rounded border border-kumo-line bg-kumo-control py-1 px-2 text-xs text-kumo-default focus:border-kumo-brand focus:outline-none"
+                        >
+                          <option value="ปวส ปี 1">ปวส ปี 1</option>
+                          <option value="ปวส ปี 2">ปวส ปี 2</option>
+                          <option value="ปวช ปี 1">ปวช ปี 1</option>
+                          <option value="ปวช ปี 2">ปวช ปี 2</option>
+                          <option value="ปวช ปี 3">ปวช ปี 3</option>
+                        </select>
+                      </div>
+
+                      <div className="grid gap-1">
+                        <label className="text-xs font-medium text-kumo-default">Group (กลุ่มเรียน)</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. 1, 2, 3"
+                          value={newClassGroup}
+                          onChange={(e) => setNewClassGroup(e.target.value)}
+                          required
+                          className="rounded border border-kumo-line bg-kumo-control py-1 px-2 text-xs text-kumo-default focus:border-kumo-brand focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid gap-1">
+                      <label className="text-xs font-medium text-kumo-default">Major Name (สาขาวิชา)</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. เทคโนโลยีคอมพิวเตอร์ (สทค)"
+                        value={newClassMajor}
+                        onChange={(e) => setNewClassMajor(e.target.value)}
+                        required
+                        className="rounded border border-kumo-line bg-kumo-control py-1 px-2 text-xs text-kumo-default focus:border-kumo-brand focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="mt-1 flex justify-end">
+                      <Button variant="primary" size="sm" type="submit">
+                        <Plus weight="thin" size={14} className="mr-1" />
+                        <span>Create class group</span>
+                      </Button>
+                    </div>
+                  </form>
+                </LayerCard>
+              </div>
+
+              {/* Full Academic Classes Table */}
+              <LayerCard className="overflow-hidden ring ring-kumo-line rounded-lg bg-kumo-base">
+                <div className="border-b border-kumo-line px-5 py-3">
+                  <h3 className="font-semibold text-xs text-kumo-default">
+                    Current class groups ({academicClassesList.length} options active)
+                  </h3>
+                </div>
+                <Table>
+                  <Table.Header>
+                    <Table.Row>
+                      <Table.Head>ชั้นปี</Table.Head>
+                      <Table.Head>กลุ่ม</Table.Head>
+                      <Table.Head>สาขาวิชา</Table.Head>
+                      <Table.Head className="text-right">Actions</Table.Head>
+                    </Table.Row>
+                  </Table.Header>
+                  <Table.Body>
+                    {academicClassesList.map((item) => (
+                      <Table.Row key={item.id}>
+                        <Table.Cell className="font-medium text-kumo-default">
+                          {item.yearLevel}
+                        </Table.Cell>
+                        <Table.Cell>กลุ่ม {item.studyGroup}</Table.Cell>
+                        <Table.Cell>{item.major}</Table.Cell>
+                        <Table.Cell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteAcademicClass(item.id)}
+                          >
+                            <Trash weight="thin" size={14} className="text-red-500" />
+                          </Button>
+                        </Table.Cell>
+                      </Table.Row>
+                    ))}
+                  </Table.Body>
+                </Table>
+              </LayerCard>
+            </div>
+          )}
+
+          {/* 3. MINIO STORAGE CONFIGURATION VIEW */}
+          {activeSection === "minio" && (
+            <div className="max-w-2xl grid gap-6">
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2">
+                  <CloudArrowUp weight="thin" size={22} className="text-kumo-brand" />
+                  <h1 className="text-xl font-semibold text-kumo-default">MinIO object storage settings</h1>
+                </div>
+                <p className="text-xs text-kumo-subtle">
+                  Configure self-hosted MinIO credentials for storing uploaded profile pictures and avatars.
+                </p>
+              </div>
+
+              <LayerCard className="p-6 ring ring-kumo-line rounded-lg bg-kumo-base">
+                {saveMessage && (
+                  <div className="mb-4 flex items-center gap-2 rounded border border-green-200 bg-green-50 p-3 text-xs text-green-700 dark:border-green-900/40 dark:bg-green-950/20 dark:text-green-400">
+                    <CheckCircle weight="thin" size={16} />
+                    <span>{saveMessage}</span>
+                  </div>
+                )}
+
+                <form onSubmit={handleSaveMinioConfig} className="grid gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="grid gap-1">
+                      <label className="text-xs font-medium text-kumo-default">MinIO Endpoint</label>
+                      <input
+                        type="text"
+                        placeholder="localhost or minio.yourdomain.com"
+                        value={minioConfig.minio_endpoint}
+                        onChange={(e) => setMinioConfig({ ...minioConfig, minio_endpoint: e.target.value })}
+                        required
+                        className="rounded border border-kumo-line bg-kumo-control py-1.5 px-2.5 text-xs font-mono text-kumo-default focus:border-kumo-brand focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="grid gap-1">
+                      <label className="text-xs font-medium text-kumo-default">Port</label>
+                      <input
+                        type="number"
+                        placeholder="9000"
+                        value={minioConfig.minio_port}
+                        onChange={(e) => setMinioConfig({ ...minioConfig, minio_port: e.target.value })}
+                        required
+                        className="rounded border border-kumo-line bg-kumo-control py-1.5 px-2.5 text-xs font-mono text-kumo-default focus:border-kumo-brand focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="grid gap-1">
+                      <label className="text-xs font-medium text-kumo-default">Access Key</label>
+                      <input
+                        type="text"
+                        placeholder="minioadmin"
+                        value={minioConfig.minio_access_key}
+                        onChange={(e) => setMinioConfig({ ...minioConfig, minio_access_key: e.target.value })}
+                        required
+                        className="rounded border border-kumo-line bg-kumo-control py-1.5 px-2.5 text-xs font-mono text-kumo-default focus:border-kumo-brand focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="grid gap-1">
+                      <label className="text-xs font-medium text-kumo-default">Secret Key</label>
+                      <input
+                        type="password"
+                        placeholder="minioadmin or secret"
+                        value={minioConfig.minio_secret_key}
+                        onChange={(e) => setMinioConfig({ ...minioConfig, minio_secret_key: e.target.value })}
+                        className="rounded border border-kumo-line bg-kumo-control py-1.5 px-2.5 text-xs font-mono text-kumo-default focus:border-kumo-brand focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="grid gap-1">
+                      <label className="text-xs font-medium text-kumo-default">Bucket Name</label>
+                      <input
+                        type="text"
+                        placeholder="avatars"
+                        value={minioConfig.minio_bucket}
+                        onChange={(e) => setMinioConfig({ ...minioConfig, minio_bucket: e.target.value })}
+                        required
+                        className="rounded border border-kumo-line bg-kumo-control py-1.5 px-2.5 text-xs font-mono text-kumo-default focus:border-kumo-brand focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="grid gap-1">
+                      <label className="text-xs font-medium text-kumo-default">Use SSL / HTTPS</label>
+                      <select
+                        value={minioConfig.minio_use_ssl ? "true" : "false"}
+                        onChange={(e) => setMinioConfig({ ...minioConfig, minio_use_ssl: e.target.value === "true" })}
+                        className="rounded border border-kumo-line bg-kumo-control py-1.5 px-2.5 text-xs text-kumo-default focus:border-kumo-brand focus:outline-none"
+                      >
+                        <option value="false">HTTP (No SSL - Port 9000)</option>
+                        <option value="true">HTTPS (SSL - Port 443)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-1">
+                    <label className="text-xs font-medium text-kumo-default">Public Image Base URL</label>
+                    <input
+                      type="text"
+                      placeholder="http://localhost:9000/avatars"
+                      value={minioConfig.minio_public_url}
+                      onChange={(e) => setMinioConfig({ ...minioConfig, minio_public_url: e.target.value })}
+                      required
+                      className="rounded border border-kumo-line bg-kumo-control py-1.5 px-2.5 text-xs font-mono text-kumo-default focus:border-kumo-brand focus:outline-none"
+                    />
+                    <span className="text-[11px] text-kumo-subtle">
+                      The public URL format used by web browsers to load uploaded avatar images.
+                    </span>
+                  </div>
+
+                  <div className="mt-2 flex justify-end">
+                    <Button variant="primary" type="submit" disabled={saveLoading}>
+                      <FloppyDisk weight="thin" size={16} className="mr-1.5" />
+                      <span>{saveLoading ? "Saving..." : "Save MinIO configuration"}</span>
+                    </Button>
+                  </div>
+                </form>
+              </LayerCard>
+            </div>
+          )}
+
+          {/* 4. GOOGLE OAUTH CONFIGURATION VIEW */}
           {activeSection === "google" && (
             <div className="max-w-2xl grid gap-6">
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-2">
+                  <GoogleLogo weight="thin" size={22} className="text-kumo-brand" />
                   <h1 className="text-xl font-semibold text-kumo-default">Google OAuth configuration</h1>
                   {googleConfig.is_configured ? (
                     <Badge variant="success">Configured</Badge>
@@ -565,9 +1027,9 @@ export default function AdminPage() {
                 </p>
               </div>
 
-              <LayerCard className="p-6 ring ring-kumo-line">
+              <LayerCard className="p-6 ring ring-kumo-line rounded-lg bg-kumo-base">
                 {saveMessage && (
-                  <div className="mb-4 flex items-center gap-2 rounded-md border border-green-200 bg-green-50 p-3 text-xs text-green-700 dark:border-green-900/40 dark:bg-green-950/20 dark:text-green-400">
+                  <div className="mb-4 flex items-center gap-2 rounded border border-green-200 bg-green-50 p-3 text-xs text-green-700 dark:border-green-900/40 dark:bg-green-950/20 dark:text-green-400">
                     <CheckCircle weight="thin" size={16} />
                     <span>{saveMessage}</span>
                   </div>
@@ -578,7 +1040,7 @@ export default function AdminPage() {
                     <label className="text-xs font-medium text-kumo-default">Google Client ID</label>
                     <input
                       type="text"
-                      className="w-full rounded-md border border-kumo-line bg-kumo-control py-2 px-3 text-sm font-mono text-[0.9em] text-kumo-default placeholder:text-kumo-subtle focus:border-kumo-brand focus:outline-none"
+                      className="w-full rounded border border-kumo-line bg-kumo-control py-2 px-3 text-sm font-mono text-[0.9em] text-kumo-default placeholder:text-kumo-subtle focus:border-kumo-brand focus:outline-none"
                       placeholder="xxxxxxxxxxxx-xxxxxxxx.apps.googleusercontent.com"
                       value={googleConfig.google_client_id}
                       onChange={(e) =>
@@ -592,7 +1054,7 @@ export default function AdminPage() {
                     <label className="text-xs font-medium text-kumo-default">Google Client Secret</label>
                     <input
                       type="password"
-                      className="w-full rounded-md border border-kumo-line bg-kumo-control py-2 px-3 text-sm font-mono text-[0.9em] text-kumo-default placeholder:text-kumo-subtle focus:border-kumo-brand focus:outline-none"
+                      className="w-full rounded border border-kumo-line bg-kumo-control py-2 px-3 text-sm font-mono text-[0.9em] text-kumo-default placeholder:text-kumo-subtle focus:border-kumo-brand focus:outline-none"
                       placeholder="GOCSPX-xxxxxxxxxxxxxxxxxxxxxxxx"
                       value={googleConfig.google_client_secret}
                       onChange={(e) =>
@@ -600,7 +1062,7 @@ export default function AdminPage() {
                       }
                     />
                     <span className="text-[11px] text-kumo-subtle">
-                      Encrypted and stored in PostgreSQL table <code className="font-mono text-[0.9em]">system_configs</code>.
+                      Stored securely in your PostgreSQL database.
                     </span>
                   </div>
 
@@ -610,16 +1072,13 @@ export default function AdminPage() {
                     </label>
                     <input
                       type="text"
-                      className="w-full rounded-md border border-kumo-line bg-kumo-control py-2 px-3 text-sm font-mono text-[0.9em] text-kumo-default placeholder:text-kumo-subtle focus:border-kumo-brand focus:outline-none"
+                      className="w-full rounded border border-kumo-line bg-kumo-control py-2 px-3 text-sm font-mono text-[0.9em] text-kumo-default placeholder:text-kumo-subtle focus:border-kumo-brand focus:outline-none"
                       value={googleConfig.google_redirect_uri}
                       onChange={(e) =>
                         setGoogleConfig({ ...googleConfig, google_redirect_uri: e.target.value })
                       }
                       required
                     />
-                    <span className="text-[11px] text-kumo-subtle">
-                      Paste this URL in Google Cloud Console &gt; Credentials &gt; Authorized redirect URIs.
-                    </span>
                   </div>
 
                   <div className="mt-2 flex justify-end">
@@ -633,18 +1092,18 @@ export default function AdminPage() {
             </div>
           )}
 
-          {/* 3. OVERVIEW METRICS VIEW */}
+          {/* 5. OVERVIEW METRICS VIEW */}
           {activeSection === "overview" && (
             <div className="grid gap-6">
               <div className="flex flex-col gap-1">
                 <h1 className="text-xl font-semibold text-kumo-default">System overview</h1>
                 <p className="text-xs text-kumo-subtle">
-                  Summary statistics for users, authentication status, and runtime environment.
+                  Summary statistics for users, academic classes, storage, and database.
                 </p>
               </div>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <LayerCard className="p-5 ring ring-kumo-line">
+                <LayerCard className="p-5 ring ring-kumo-line rounded-lg bg-kumo-base">
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-kumo-subtle">Total accounts</span>
                     <Users weight="thin" size={20} className="text-kumo-brand" />
@@ -657,32 +1116,32 @@ export default function AdminPage() {
                   </div>
                 </LayerCard>
 
-                <LayerCard className="p-5 ring ring-kumo-line">
+                <LayerCard className="p-5 ring ring-kumo-line rounded-lg bg-kumo-base">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-kumo-subtle">Google OAuth</span>
-                    <GoogleLogo weight="thin" size={20} className="text-kumo-brand" />
+                    <span className="text-xs text-kumo-subtle">Class groups</span>
+                    <GraduationCap weight="thin" size={20} className="text-kumo-brand" />
                   </div>
                   <div className="mt-2 text-2xl font-semibold text-kumo-default">
-                    {googleConfig.is_configured ? "Enabled" : "Disabled"}
+                    {academicClassesList.length}
                   </div>
                   <div className="mt-1 text-xs text-kumo-subtle">
-                    {usersList.filter((u) => u.provider === "google").length} users via Google
+                    {departmentsList.length} academic departments
                   </div>
                 </LayerCard>
 
-                <LayerCard className="p-5 ring ring-kumo-line">
+                <LayerCard className="p-5 ring ring-kumo-line rounded-lg bg-kumo-base">
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-kumo-subtle">Database Status</span>
                     <Database weight="thin" size={20} className="text-kumo-brand" />
                   </div>
                   <div className="mt-2 text-2xl font-semibold text-kumo-default">Connected</div>
-                  <div className="mt-1 text-xs text-kumo-subtle">PostgreSQL &bull; Drizzle ORM</div>
+                  <div className="mt-1 text-xs text-kumo-subtle">PostgreSQL &bull; MinIO Storage</div>
                 </LayerCard>
               </div>
             </div>
           )}
 
-          {/* 4. DATABASE & SECURITY VIEW */}
+          {/* 6. DATABASE & SECURITY VIEW */}
           {activeSection === "system" && (
             <div className="max-w-2xl grid gap-6">
               <div className="flex flex-col gap-1">
@@ -692,7 +1151,7 @@ export default function AdminPage() {
                 </p>
               </div>
 
-              <LayerCard className="p-6 ring ring-kumo-line">
+              <LayerCard className="p-6 ring ring-kumo-line rounded-lg bg-kumo-base">
                 <div className="grid gap-4">
                   <div className="flex items-start justify-between border-b border-kumo-line pb-3">
                     <div>
@@ -708,7 +1167,7 @@ export default function AdminPage() {
                     <div>
                       <div className="font-medium text-kumo-default">Session JWT & Cookies</div>
                       <div className="text-xs text-kumo-subtle">
-                        Sessions are signed with JOSE (HS256) and set with HttpOnly flags.
+                        Sessions are signed with JOSE (HS256) and set with 30-day HttpOnly flags.
                       </div>
                     </div>
                     <Badge variant="neutral">Active</Badge>
@@ -716,12 +1175,12 @@ export default function AdminPage() {
 
                   <div className="flex items-start justify-between">
                     <div>
-                      <div className="font-medium text-kumo-default">Database Dialect</div>
+                      <div className="font-medium text-kumo-default">Storage Layer</div>
                       <div className="text-xs text-kumo-subtle">
-                        PostgreSQL 18 via postgres-js driver and Drizzle schema migrations.
+                        PostgreSQL for relational models + MinIO for user uploaded avatars.
                       </div>
                     </div>
-                    <Badge variant="neutral">Postgres</Badge>
+                    <Badge variant="neutral">Connected</Badge>
                   </div>
                 </div>
               </LayerCard>

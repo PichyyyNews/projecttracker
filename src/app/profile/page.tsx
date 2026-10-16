@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -13,16 +13,13 @@ import {
   User,
   IdentificationCard,
   Phone,
-  GraduationCap,
-  UsersThree,
   CheckCircle,
   WarningCircle,
   FloppyDisk,
   Camera,
-  Kanban,
+  SpinnerGap,
 } from "@phosphor-icons/react";
 import UserAvatar from "@/components/UserAvatar";
-import { ACADEMIC_GROUPS, DEPARTMENTS } from "@/lib/academic";
 import { USER_ROLES, UserRole } from "@/lib/roles";
 
 interface UserProfileData {
@@ -39,41 +36,75 @@ interface UserProfileData {
   studyGroup: string | null;
 }
 
+interface DepartmentItem {
+  id: number;
+  name: string;
+}
+
+interface AcademicClassItem {
+  id: number;
+  yearLevel: string;
+  studyGroup: string;
+  major: string;
+}
+
 export default function ProfilePage() {
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Dynamic Options from Database
+  const [departmentsList, setDepartmentsList] = useState<DepartmentItem[]>([]);
+  const [academicClassesList, setAcademicClassesList] = useState<AcademicClassItem[]>([]);
 
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     studentId: "",
     phone: "",
-    department: DEPARTMENTS[0],
-    selectedAcademicIndex: 0, // Maps to ACADEMIC_GROUPS
+    department: "",
+    selectedAcademicIndex: 0,
     avatarUrl: "",
     role: "student",
   });
 
   useEffect(() => {
-    async function loadProfile() {
+    async function loadData() {
       try {
-        const res = await fetch("/api/auth/me");
-        const data = await res.json();
-        if (!data.authenticated || !data.user) {
+        const [meRes, acRes] = await Promise.all([
+          fetch("/api/auth/me"),
+          fetch("/api/admin/academic"),
+        ]);
+
+        const meData = await meRes.json();
+        if (!meData.authenticated || !meData.user) {
           router.replace("/login");
           return;
         }
 
-        const user: UserProfileData = data.user;
-        
-        // Find academic match if available
-        let academicIdx = ACADEMIC_GROUPS.findIndex(
+        const user: UserProfileData = meData.user;
+        let depts: DepartmentItem[] = [];
+        let classes: AcademicClassItem[] = [];
+
+        if (acRes.ok) {
+          const acData = await acRes.json();
+          if (acData.success) {
+            depts = acData.departments;
+            classes = acData.academicClasses;
+            setDepartmentsList(depts);
+            setAcademicClassesList(classes);
+          }
+        }
+
+        let academicIdx = classes.findIndex(
           (ag) =>
             ag.yearLevel === user.yearLevel &&
-            ag.group === user.studyGroup &&
+            ag.studyGroup === user.studyGroup &&
             ag.major === user.major
         );
         if (academicIdx === -1) academicIdx = 0;
@@ -83,27 +114,51 @@ export default function ProfilePage() {
           email: user.email || "",
           studentId: user.studentId || "",
           phone: user.phone || "",
-          department: user.department || DEPARTMENTS[0],
+          department: user.department || (depts[0]?.name || ""),
           selectedAcademicIndex: academicIdx,
           avatarUrl: user.avatarUrl || "",
           role: user.role || "student",
         });
       } catch (err: any) {
-        setError(err.message || "Failed to load profile");
+        setError(err.message || "Failed to load profile data");
       } finally {
         setLoading(false);
       }
     }
 
-    loadProfile();
+    loadData();
   }, [router]);
 
-  const handleAcademicChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const idx = parseInt(e.target.value, 10);
-    setFormData((prev) => ({
-      ...prev,
-      selectedAcademicIndex: idx,
-    }));
+  // Handle Image Upload to MinIO
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    setError(null);
+
+    const fd = new FormData();
+    fd.append("file", file);
+
+    try {
+      const res = await fetch("/api/auth/upload-avatar", {
+        method: "POST",
+        body: fd,
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to upload avatar to MinIO");
+      }
+
+      setFormData((prev) => ({ ...prev, avatarUrl: data.url }));
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (err: any) {
+      setError(err.message || "Error uploading image to MinIO");
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleSaveProfile = async (e: React.FormEvent) => {
@@ -112,7 +167,7 @@ export default function ProfilePage() {
     setSaveSuccess(false);
     setError(null);
 
-    const chosenGroup = ACADEMIC_GROUPS[formData.selectedAcademicIndex];
+    const chosenGroup = academicClassesList[formData.selectedAcademicIndex];
 
     try {
       const res = await fetch("/api/auth/profile", {
@@ -123,9 +178,9 @@ export default function ProfilePage() {
           studentId: formData.studentId,
           phone: formData.phone,
           department: formData.department,
-          yearLevel: chosenGroup.yearLevel,
-          studyGroup: chosenGroup.group,
-          major: chosenGroup.major,
+          yearLevel: chosenGroup ? chosenGroup.yearLevel : null,
+          studyGroup: chosenGroup ? chosenGroup.studyGroup : null,
+          major: chosenGroup ? chosenGroup.major : null,
           avatarUrl: formData.avatarUrl || null,
         }),
       });
@@ -152,7 +207,7 @@ export default function ProfilePage() {
     );
   }
 
-  const selectedAcademic = ACADEMIC_GROUPS[formData.selectedAcademicIndex];
+  const selectedAcademic = academicClassesList[formData.selectedAcademicIndex];
 
   return (
     <div className="min-h-screen bg-kumo-canvas">
@@ -193,7 +248,7 @@ export default function ProfilePage() {
         {saveSuccess && (
           <div className="mb-6 flex items-center gap-2 rounded border border-green-200 bg-green-50 p-3 text-xs text-green-700 dark:border-green-900/40 dark:bg-green-950/20 dark:text-green-400">
             <CheckCircle weight="thin" size={16} />
-            <span>Profile settings saved successfully!</span>
+            <span>Profile and MinIO photo updated successfully!</span>
           </div>
         )}
 
@@ -205,40 +260,65 @@ export default function ProfilePage() {
         )}
 
         <form onSubmit={handleSaveProfile} className="grid gap-6">
-          {/* Section 1: Avatar & Basic Info */}
+          {/* Section 1: Avatar with MinIO File Upload */}
           <LayerCard className="p-6 ring ring-kumo-line rounded-lg bg-kumo-base">
-            <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center">
-              <div className="relative">
+            <div className="mb-5 flex flex-col gap-5 sm:flex-row sm:items-center">
+              <div className="relative group">
                 <UserAvatar
                   src={formData.avatarUrl || null}
                   name={formData.name}
-                  size={64}
+                  size={72}
                   className="ring-2 ring-kumo-line"
                 />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 text-white opacity-0 transition-opacity group-hover:opacity-100 disabled:opacity-50"
+                  title="Upload new image"
+                >
+                  {uploading ? (
+                    <SpinnerGap weight="thin" size={24} className="animate-spin" />
+                  ) : (
+                    <Camera weight="thin" size={24} />
+                  )}
+                </button>
               </div>
-              <div className="grid gap-1">
-                <h2 className="text-sm font-semibold text-kumo-default">Profile picture</h2>
+
+              <div className="grid gap-1.5">
+                <h2 className="text-sm font-semibold text-kumo-default">Profile picture (รูปภาพโปรไฟล์)</h2>
                 <p className="text-xs text-kumo-subtle">
-                  Custom image URL or Google profile avatar.
+                  Upload directly to MinIO Object Storage (PNG, JPG, WebP)
                 </p>
-                <div className="mt-1 flex max-w-md items-center gap-2">
-                  <input
-                    type="url"
-                    placeholder="https://example.com/avatar.jpg"
-                    value={formData.avatarUrl}
-                    onChange={(e) =>
-                      setFormData({ ...formData, avatarUrl: e.target.value })
-                    }
-                    className="w-full rounded border border-kumo-line bg-kumo-control py-1 px-2.5 text-xs text-kumo-default placeholder:text-kumo-subtle focus:border-kumo-brand focus:outline-none"
-                  />
+
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  accept="image/*"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    type="button"
+                    disabled={uploading}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Camera weight="thin" size={16} className="mr-1.5" />
+                    <span>{uploading ? "Uploading to MinIO..." : "Upload photo"}</span>
+                  </Button>
+
                   {formData.avatarUrl && (
                     <Button
-                      variant="secondary"
+                      variant="ghost"
                       size="sm"
                       type="button"
                       onClick={() => setFormData({ ...formData, avatarUrl: "" })}
                     >
-                      Clear
+                      Remove
                     </Button>
                   )}
                 </div>
@@ -311,14 +391,14 @@ export default function ProfilePage() {
             </div>
           </LayerCard>
 
-          {/* Section 2: Academic Department & Study Group Dropdowns */}
+          {/* Section 2: Academic Department & Dynamic Class Groups Dropdowns */}
           <LayerCard className="p-6 ring ring-kumo-line rounded-lg bg-kumo-base">
             <div className="mb-4 grid gap-1">
               <h2 className="text-sm font-semibold text-kumo-default">
                 Academic & class group (แผนก สาขา และกลุ่มเรียน)
               </h2>
               <p className="text-xs text-kumo-subtle">
-                Select your academic level, group, and major according to college registration.
+                Dynamic options managed directly by the college administrator.
               </p>
             </div>
 
@@ -330,27 +410,29 @@ export default function ProfilePage() {
                   onChange={(e) => setFormData({ ...formData, department: e.target.value })}
                   className="w-full rounded border border-kumo-line bg-kumo-control py-1.5 px-2.5 text-xs text-kumo-default focus:border-kumo-brand focus:outline-none"
                 >
-                  {DEPARTMENTS.map((dept) => (
-                    <option key={dept} value={dept}>
-                      {dept}
+                  {departmentsList.map((dept) => (
+                    <option key={dept.id} value={dept.name}>
+                      {dept.name}
                     </option>
                   ))}
                 </select>
               </div>
 
-              {/* Combined Academic Dropdown matching the user's table */}
+              {/* Dynamic Academic Dropdown */}
               <div className="grid gap-1">
                 <label className="text-xs font-medium text-kumo-default">
                   Level, Group & Major (ชั้นปี / กลุ่ม / สาขา)
                 </label>
                 <select
                   value={formData.selectedAcademicIndex}
-                  onChange={handleAcademicChange}
+                  onChange={(e) =>
+                    setFormData({ ...formData, selectedAcademicIndex: parseInt(e.target.value, 10) })
+                  }
                   className="w-full rounded border border-kumo-line bg-kumo-control py-1.5 px-2.5 text-xs text-kumo-default focus:border-kumo-brand focus:outline-none font-medium"
                 >
-                  {ACADEMIC_GROUPS.map((ag, idx) => (
-                    <option key={idx} value={idx}>
-                      {ag.yearLevel} - กลุ่ม {ag.group} : {ag.major}
+                  {academicClassesList.map((ag, idx) => (
+                    <option key={ag.id} value={idx}>
+                      {ag.yearLevel} - กลุ่ม {ag.studyGroup} : {ag.major}
                     </option>
                   ))}
                 </select>
@@ -358,23 +440,25 @@ export default function ProfilePage() {
             </div>
 
             {/* Quick Preview Card */}
-            <div className="mt-5 rounded border border-kumo-line bg-kumo-tint p-3 text-xs">
-              <div className="font-semibold text-kumo-default mb-1">Current selection summary:</div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-kumo-subtle">
-                <div>
-                  <span className="font-medium text-kumo-default">ชั้นปี:</span>{" "}
-                  {selectedAcademic.yearLevel}
-                </div>
-                <div>
-                  <span className="font-medium text-kumo-default">กลุ่มเรียน:</span> กลุ่ม{" "}
-                  {selectedAcademic.group}
-                </div>
-                <div>
-                  <span className="font-medium text-kumo-default">สาขาวิชา:</span>{" "}
-                  {selectedAcademic.major}
+            {selectedAcademic && (
+              <div className="mt-5 rounded border border-kumo-line bg-kumo-tint p-3 text-xs">
+                <div className="font-semibold text-kumo-default mb-1">Current selection summary:</div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-kumo-subtle">
+                  <div>
+                    <span className="font-medium text-kumo-default">ชั้นปี:</span>{" "}
+                    {selectedAcademic.yearLevel}
+                  </div>
+                  <div>
+                    <span className="font-medium text-kumo-default">กลุ่มเรียน:</span> กลุ่ม{" "}
+                    {selectedAcademic.studyGroup}
+                  </div>
+                  <div>
+                    <span className="font-medium text-kumo-default">สาขาวิชา:</span>{" "}
+                    {selectedAcademic.major}
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </LayerCard>
 
           {/* Form Actions */}
@@ -384,7 +468,7 @@ export default function ProfilePage() {
                 Cancel
               </Button>
             </Link>
-            <Button variant="primary" type="submit" disabled={saving}>
+            <Button variant="primary" type="submit" disabled={saving || uploading}>
               <FloppyDisk weight="thin" size={16} className="mr-1.5" />
               <span>{saving ? "Saving changes..." : "Save profile"}</span>
             </Button>
