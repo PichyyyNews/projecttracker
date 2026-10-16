@@ -12,25 +12,25 @@ export const USER_ROLES: Record<UserRole, RoleConfig> = {
     key: "admin",
     label: "Admin",
     badgeVariant: "error",
-    description: "ผู้ดูแลระบบ มีสิทธิ์สูงสุดในการจัดการผู้ใช้และระบบ",
+    description: "System Administrator with full access",
   },
   advisor: {
     key: "advisor",
-    label: "อาจารย์ที่ปรึกษา",
+    label: "Project Advisor",
     badgeVariant: "warning",
-    description: "อาจารย์ที่ปรึกษาโครงงาน/โปรเจกต์ ติดตามและให้คำแนะนำ",
+    description: "Project advisor overseeing student projects",
   },
   instructor: {
     key: "instructor",
-    label: "อาจารย์ประจำวิชา",
+    label: "Course Instructor",
     badgeVariant: "info",
-    description: "อาจารย์ผู้สอนประจำวิชา ประเมินและอนุมัติโปรเจกต์",
+    description: "Course instructor evaluating student projects",
   },
   student: {
     key: "student",
-    label: "user นักศึกษา",
+    label: "Student",
     badgeVariant: "neutral",
-    description: "นักศึกษาเจ้าของโปรเจกต์ ส่งงานและติดตามสถานะ",
+    description: "Student member managing project deliverables",
   },
 };
 
