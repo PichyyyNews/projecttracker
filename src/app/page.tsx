@@ -10,16 +10,17 @@ import {
 import {
   Kanban,
   SignOut,
-  User,
   Plus,
   FolderOpen,
 } from "@phosphor-icons/react";
+import UserAvatar from "@/components/UserAvatar";
 
 interface UserSession {
   id: number;
   name: string;
   email: string;
   role: string;
+  avatarUrl?: string | null;
 }
 
 export default function HomePage() {
@@ -77,11 +78,9 @@ export default function HomePage() {
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="hidden items-center gap-2 sm:flex">
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-kumo-control ring ring-kumo-line text-kumo-default">
-                <User weight="thin" size={16} />
-              </div>
-              <div className="flex flex-col text-left">
+            <div className="flex items-center gap-2">
+              <UserAvatar src={currentUser?.avatarUrl} name={currentUser?.name} size={30} />
+              <div className="hidden flex-col text-left sm:flex">
                 <span className="text-xs font-medium text-kumo-default leading-tight">
                   {currentUser?.name}
                 </span>

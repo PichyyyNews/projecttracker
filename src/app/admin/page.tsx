@@ -26,6 +26,7 @@ import {
   UserCheck,
   UserCircle,
 } from "@phosphor-icons/react";
+import UserAvatar from "@/components/UserAvatar";
 
 interface AdminUser {
   id: number;
@@ -462,9 +463,7 @@ export default function AdminPage() {
                         <Table.Row key={user.id}>
                           <Table.Cell>
                             <div className="flex items-center gap-2.5">
-                              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-kumo-control ring ring-kumo-line text-kumo-subtle">
-                                <UserCircle weight="thin" size={20} />
-                              </div>
+                              <UserAvatar src={user.avatarUrl} name={user.name} size={28} />
                               <div className="flex flex-col">
                                 <span className="font-medium text-kumo-default">{user.name}</span>
                                 <span className="text-xs text-kumo-subtle">{user.email}</span>
