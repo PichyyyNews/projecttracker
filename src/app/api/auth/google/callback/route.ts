@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { systemConfigs, users } from "@/db/schema";
 import { eq, inArray } from "drizzle-orm";
-import { signSession } from "@/lib/auth";
+import { signSession, SESSION_MAX_AGE } from "@/lib/auth";
 
 export async function GET(req: Request) {
   const { searchParams, origin } = new URL(req.url);
@@ -113,8 +113,9 @@ export async function GET(req: Request) {
       value: token,
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
       path: "/",
-      maxAge: 60 * 60 * 24 * 7,
+      maxAge: SESSION_MAX_AGE,
     });
 
     return res;

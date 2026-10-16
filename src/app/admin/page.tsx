@@ -262,7 +262,7 @@ export default function AdminPage() {
             </div>
             <div className="flex flex-col">
               <span className="font-semibold text-kumo-default text-sm">Admin console</span>
-              <span className="text-[11px] text-kumo-subtle">PIN 030347 Verified</span>
+              <span className="text-[11px] text-kumo-subtle"></span>
             </div>
           </div>
 

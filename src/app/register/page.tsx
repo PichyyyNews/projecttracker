@@ -27,6 +27,22 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
+  // If already logged in, automatically redirect to home
+  React.useEffect(() => {
+    async function checkAuth() {
+      try {
+        const res = await fetch("/api/auth/me");
+        const data = await res.json();
+        if (data.authenticated) {
+          router.replace("/");
+        }
+      } catch (err) {
+        // ignore
+      }
+    }
+    checkAuth();
+  }, [router]);
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
