@@ -13,9 +13,9 @@ import {
   EnvelopeSimple,
   LockSimple,
   WarningCircle,
-  GoogleLogo,
   ArrowRight,
 } from "@phosphor-icons/react";
+import GoogleButton from "@/components/GoogleButton";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -110,15 +110,7 @@ export default function RegisterPage() {
 
           {/* Social Sign-In (Google) */}
           <div className="mb-5">
-            <button
-              type="button"
-              onClick={handleGoogleLogin}
-              disabled={googleLoading}
-              className="flex w-full items-center justify-center gap-2.5 rounded-md border border-kumo-line bg-kumo-base px-4 py-2 text-sm font-medium text-kumo-default hover:bg-kumo-tint disabled:opacity-50"
-            >
-              <GoogleLogo weight="thin" size={18} className="text-kumo-default" />
-              <span>{googleLoading ? "Connecting to Google..." : "Sign up with Google"}</span>
-            </button>
+            <GoogleButton onClick={handleGoogleLogin} loading={googleLoading} />
           </div>
 
           <div className="relative mb-5 flex items-center justify-center">
