@@ -19,6 +19,7 @@ import {
   Gear,
 } from "@phosphor-icons/react";
 import UserAvatar from "@/components/UserAvatar";
+import AppNavbar from "@/components/AppNavbar";
 import { USER_ROLES, UserRole } from "@/lib/roles";
 
 interface UserSession {
@@ -72,124 +73,7 @@ export default function HomePage() {
   return (
     <div className="flex min-h-screen flex-col bg-kumo-canvas">
       {/* Top Navbar */}
-      <header className="sticky top-0 z-20 border-b border-kumo-line bg-kumo-base px-4 py-3 sm:px-6">
-        <div className="mx-auto flex max-w-6xl items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-kumo-brand text-white">
-              <Kanban weight="thin" size={20} />
-            </div>
-            <div className="flex flex-col">
-              <span className="font-semibold text-kumo-default">Project Tracker</span>
-              <span className="text-xs text-kumo-subtle">Workspace</span>
-            </div>
-          </div>
-
-          <div className="relative">
-            {/* Profile Trigger Button */}
-            <button
-              type="button"
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="flex items-center gap-2 rounded-lg p-1.5 transition-none hover:bg-kumo-tint focus:outline-none"
-            >
-              <UserAvatar src={currentUser?.avatarUrl} name={currentUser?.name} size={32} />
-              <div className="hidden flex-col text-left sm:flex">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-semibold text-kumo-default leading-tight">
-                    {currentUser?.name}
-                  </span>
-                  {currentUser?.role && currentUser.role !== "student" && (
-                    <Badge
-                      variant={
-                        USER_ROLES[currentUser.role as UserRole]?.badgeVariant || "neutral"
-                      }
-                    >
-                      {USER_ROLES[currentUser.role as UserRole]?.label || currentUser.role}
-                    </Badge>
-                  )}
-                </div>
-                <span className="text-[11px] text-kumo-subtle leading-tight">
-                  {currentUser?.email}
-                </span>
-              </div>
-              <CaretDown
-                weight="thin"
-                size={14}
-                className={`text-kumo-subtle transition-transform duration-200 ${
-                  isDropdownOpen ? "rotate-180" : ""
-                }`}
-              />
-            </button>
-
-            {/* Backdrop click closer */}
-            {isDropdownOpen && (
-              <div
-                className="fixed inset-0 z-30"
-                onClick={() => setIsDropdownOpen(false)}
-              />
-            )}
-
-            {/* Profile Dropdown Menu */}
-            {isDropdownOpen && (
-              <div className="absolute right-0 top-full z-40 mt-1.5 w-60 rounded-md border border-kumo-line bg-kumo-base py-1.5 shadow-lg ring ring-kumo-line">
-                {/* Header Profile Info inside dropdown */}
-                <div className="border-b border-kumo-line px-3 py-2">
-                  <div className="font-semibold text-xs text-kumo-default">
-                    {currentUser?.name}
-                  </div>
-                  <div className="text-[11px] text-kumo-subtle truncate">
-                    {currentUser?.email}
-                  </div>
-                </div>
-
-                {/* Dropdown Items: Profile, Mail, Setting, Sign Out */}
-                <div className="py-1">
-                  <Link
-                    href="/profile"
-                    onClick={() => setIsDropdownOpen(false)}
-                    className="flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium text-kumo-default hover:bg-kumo-tint transition-none"
-                  >
-                    <User weight="thin" size={16} className="text-kumo-subtle" />
-                    <span>Profile</span>
-                  </Link>
-
-                  <a
-                    href={`mailto:${currentUser?.email}`}
-                    onClick={() => setIsDropdownOpen(false)}
-                    className="flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium text-kumo-default hover:bg-kumo-tint transition-none"
-                  >
-                    <EnvelopeSimple weight="thin" size={16} className="text-kumo-subtle" />
-                    <span>Mail</span>
-                  </a>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsDropdownOpen(false);
-                      alert("Opening Settings");
-                    }}
-                    className="flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium text-kumo-default hover:bg-kumo-tint transition-none"
-                  >
-                    <Gear weight="thin" size={16} className="text-kumo-subtle" />
-                    <span>Settings</span>
-                  </button>
-                </div>
-
-                {/* Sign Out Action */}
-                <div className="border-t border-kumo-line pt-1">
-                  <button
-                    type="button"
-                    onClick={handleLogout}
-                    className="flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 transition-none"
-                  >
-                    <SignOut weight="thin" size={16} />
-                    <span>Sign out</span>
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </header>
+      <AppNavbar currentUser={currentUser} subtitle="Workspace" />
 
       {/* Main Content Area: Clean / Empty State as requested */}
       <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col items-center justify-center px-4 py-12 sm:px-6">

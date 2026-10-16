@@ -20,6 +20,7 @@ import {
   SpinnerGap,
 } from "@phosphor-icons/react";
 import UserAvatar from "@/components/UserAvatar";
+import AppNavbar from "@/components/AppNavbar";
 import { USER_ROLES, UserRole } from "@/lib/roles";
 
 interface UserProfileData {
@@ -62,6 +63,8 @@ export default function ProfilePage() {
   const [departmentsList, setDepartmentsList] = useState<DepartmentItem[]>([]);
   const [academicClassesList, setAcademicClassesList] = useState<AcademicClassItem[]>([]);
 
+  const [currentUser, setCurrentUser] = useState<UserProfileData | null>(null);
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -88,6 +91,7 @@ export default function ProfilePage() {
         }
 
         const user: UserProfileData = meData.user;
+        setCurrentUser(user);
         let depts: DepartmentItem[] = [];
         let classes: AcademicClassItem[] = [];
 
@@ -211,30 +215,8 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-kumo-canvas">
-      {/* Top Header */}
-      <header className="sticky top-0 z-20 border-b border-kumo-line bg-kumo-base px-4 py-3 sm:px-6">
-        <div className="mx-auto flex max-w-4xl items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link
-              href="/"
-              className="flex items-center gap-1.5 text-xs text-kumo-subtle hover:text-kumo-default"
-            >
-              <ArrowLeft weight="thin" size={16} />
-              <span>Back to workspace</span>
-            </Link>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Badge
-              variant={
-                USER_ROLES[formData.role as UserRole]?.badgeVariant || "neutral"
-              }
-            >
-              {USER_ROLES[formData.role as UserRole]?.label || formData.role}
-            </Badge>
-          </div>
-        </div>
-      </header>
+      {/* Top Navbar matching Workspace Navbar */}
+      <AppNavbar currentUser={currentUser} subtitle="Profile Settings" />
 
       {/* Main Content Area */}
       <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
