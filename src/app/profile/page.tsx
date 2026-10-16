@@ -66,6 +66,9 @@ export default function ProfilePage() {
   const [isNameModalOpen, setIsNameModalOpen] = useState(false);
   const [tempName, setTempName] = useState("");
 
+  // Delete avatar confirmation modal state
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
   // Dynamic Options from Database
   const [departmentsList, setDepartmentsList] = useState<DepartmentItem[]>([]);
   const [academicClassesList, setAcademicClassesList] = useState<AcademicClassItem[]>([]);
@@ -173,10 +176,15 @@ export default function ProfilePage() {
     }
   };
 
-  const handleRemoveAvatar = async (e: React.MouseEvent) => {
+  const handleRemoveAvatar = (e: React.MouseEvent) => {
     e.stopPropagation();
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDeleteAvatar = () => {
     setFormData((prev) => ({ ...prev, avatarUrl: "" }));
-    setCurrentUser((prev) => prev ? { ...prev, avatarUrl: null } : null);
+    setCurrentUser((prev) => (prev ? { ...prev, avatarUrl: null } : null));
+    setIsDeleteModalOpen(false);
   };
 
   const handleOpenNameModal = () => {
@@ -261,37 +269,65 @@ export default function ProfilePage() {
                 className="hidden"
               />
 
-              {/* Clickable Avatar with sleek hover overlay */}
-              <div
-                onClick={() => fileInputRef.current?.click()}
-                className="relative group shrink-0 cursor-pointer"
-                title="Click to change photo"
-              >
-                <UserAvatar
-                  src={formData.avatarUrl || null}
-                  name={formData.name}
-                  size={84}
-                  className="ring-2 ring-kumo-line rounded-full"
-                />
+              {/* Clickable Avatar with sleek hover overlay & mobile action buttons */}
+              <div className="relative shrink-0">
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className="relative group cursor-pointer"
+                  title="Click to change photo"
+                >
+                  <UserAvatar
+                    src={formData.avatarUrl || null}
+                    name={formData.name}
+                    size={84}
+                    className="ring-2 ring-kumo-line rounded-full"
+                  />
 
-                {/* Hover Overlay */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center rounded-full bg-black/50 text-white opacity-0 transition-opacity duration-150 group-hover:opacity-100">
-                  {uploading ? (
-                    <SpinnerGap weight="thin" size={26} className="animate-spin" />
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <Camera weight="thin" size={22} />
-                      {formData.avatarUrl && (
-                        <button
-                          type="button"
-                          onClick={handleRemoveAvatar}
-                          title="Remove photo"
-                          className="p-1 hover:text-red-400 transition-colors"
-                        >
-                          <Trash weight="thin" size={18} />
-                        </button>
-                      )}
-                    </div>
+                  {/* Desktop Hover Overlay */}
+                  <div className="absolute inset-0 hidden sm:flex flex-col items-center justify-center rounded-full bg-black/50 text-white opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+                    {uploading ? (
+                      <SpinnerGap weight="thin" size={26} className="animate-spin" />
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <Camera weight="thin" size={22} />
+                        {formData.avatarUrl && (
+                          <button
+                            type="button"
+                            onClick={handleRemoveAvatar}
+                            title="Remove photo"
+                            className="p-1 hover:text-red-400 transition-colors"
+                          >
+                            <Trash weight="thin" size={18} />
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Mobile-friendly action buttons (always visible on touch screens) */}
+                <div className="sm:hidden absolute -bottom-1 -right-1 flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    title="Change photo"
+                    className="flex h-7 w-7 items-center justify-center rounded-full bg-kumo-brand text-white shadow-md ring-2 ring-kumo-base"
+                  >
+                    {uploading ? (
+                      <SpinnerGap weight="thin" size={14} className="animate-spin" />
+                    ) : (
+                      <Camera weight="bold" size={13} />
+                    )}
+                  </button>
+                  {formData.avatarUrl && (
+                    <button
+                      type="button"
+                      onClick={handleRemoveAvatar}
+                      title="Remove photo"
+                      className="flex h-7 w-7 items-center justify-center rounded-full bg-red-600 text-white shadow-md ring-2 ring-kumo-base"
+                    >
+                      <Trash weight="bold" size={13} />
+                    </button>
                   )}
                 </div>
               </div>
@@ -451,6 +487,44 @@ export default function ProfilePage() {
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal for Removing Avatar Photo */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
+          <div className="w-full max-w-sm rounded-xl border border-kumo-line bg-kumo-base p-6 shadow-xl space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600 dark:bg-red-950/40 dark:text-red-400">
+                <Trash weight="thin" size={20} />
+              </div>
+              <div className="flex flex-col">
+                <h3 className="text-sm font-semibold text-kumo-default">Remove profile photo</h3>
+                <p className="text-xs text-kumo-subtle">
+                  Are you sure you want to remove your profile picture?
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-3">
+              <Button
+                variant="secondary"
+                size="sm"
+                type="button"
+                onClick={() => setIsDeleteModalOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                type="button"
+                onClick={confirmDeleteAvatar}
+              >
+                Remove photo
+              </Button>
+            </div>
           </div>
         </div>
       )}

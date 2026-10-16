@@ -92,8 +92,8 @@ export default function LoginPage() {
         <LayerCard className="p-6 ring ring-kumo-line rounded-lg bg-kumo-base">
           {/* Brand / Logo Header inside Card */}
           <div className="mb-6 flex flex-col items-center text-center">
-            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded bg-kumo-brand text-white shadow-none">
-              <Kanban weight="thin" size={22} />
+            <div className="mb-3 flex h-12 w-12 items-center justify-center overflow-hidden rounded-lg bg-kumo-base ring-1 ring-kumo-line p-1">
+              <img src="/logo.png" alt="Logo" className="h-full w-full object-contain" />
             </div>
             <h1 className="text-lg font-semibold text-kumo-default">Sign in to Project Tracker</h1>
             <p className="mt-1 text-xs text-kumo-subtle">
