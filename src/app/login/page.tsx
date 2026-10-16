@@ -72,19 +72,18 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen w-full flex-col justify-center bg-kumo-canvas px-4 py-8 sm:px-6">
       <div className="mx-auto w-full max-w-[420px]">
-        {/* Brand / Logo Header */}
-        <div className="mb-6 flex flex-col items-center text-center">
-          <div className="mb-3 flex h-10 w-10 items-center justify-center rounded bg-kumo-brand text-white shadow-none">
-            <Kanban weight="thin" size={22} />
-          </div>
-          <h1 className="text-lg font-semibold text-kumo-default">Sign in to Project Tracker</h1>
-          <p className="mt-1 text-xs text-kumo-subtle">
-            Enter your credentials to access your workspace.
-          </p>
-        </div>
-
         {/* Card Container */}
         <LayerCard className="p-6 ring ring-kumo-line rounded-lg bg-kumo-base">
+          {/* Brand / Logo Header inside Card */}
+          <div className="mb-6 flex flex-col items-center text-center">
+            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded bg-kumo-brand text-white shadow-none">
+              <Kanban weight="thin" size={22} />
+            </div>
+            <h1 className="text-lg font-semibold text-kumo-default">Sign in to Project Tracker</h1>
+            <p className="mt-1 text-xs text-kumo-subtle">
+              Enter your credentials to access your workspace.
+            </p>
+          </div>
           {error && (
             <div className="mb-4 flex items-start gap-2 rounded border border-red-200 bg-red-50 p-2.5 text-xs text-red-600 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-400">
               <span className="h-lh flex items-center">
