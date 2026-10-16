@@ -9,6 +9,12 @@ export const users = pgTable("users", {
   avatarUrl: text("avatar_url"),
   provider: varchar("provider", { length: 50 }).notNull().default("credentials"), // credentials, google
   status: varchar("status", { length: 50 }).notNull().default("active"), // active, suspended
+  studentId: varchar("student_id", { length: 50 }), // รหัสนักศึกษา
+  phone: varchar("phone", { length: 50 }), // เบอร์โทรศัพท์
+  department: varchar("department", { length: 255 }), // แผนก
+  major: varchar("major", { length: 255 }), // สาขา
+  yearLevel: varchar("year_level", { length: 50 }), // ชั้นปี
+  studyGroup: varchar("study_group", { length: 50 }), // กลุ่มเรียน
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

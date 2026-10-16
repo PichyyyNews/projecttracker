@@ -143,17 +143,14 @@ export default function HomePage() {
 
                 {/* Dropdown Items: Profile, Mail, Setting, Sign Out */}
                 <div className="py-1">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsDropdownOpen(false);
-                      alert("Opening Profile: " + currentUser?.name);
-                    }}
+                  <Link
+                    href="/profile"
+                    onClick={() => setIsDropdownOpen(false)}
                     className="flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium text-kumo-default hover:bg-kumo-tint transition-none"
                   >
                     <User weight="thin" size={16} className="text-kumo-subtle" />
                     <span>Profile</span>
-                  </button>
+                  </Link>
 
                   <a
                     href={`mailto:${currentUser?.email}`}

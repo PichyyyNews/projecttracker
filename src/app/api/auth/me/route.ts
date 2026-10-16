@@ -27,6 +27,12 @@ export async function GET() {
         role: users.role,
         status: users.status,
         avatarUrl: users.avatarUrl,
+        studentId: users.studentId,
+        phone: users.phone,
+        department: users.department,
+        major: users.major,
+        yearLevel: users.yearLevel,
+        studyGroup: users.studyGroup,
       })
       .from(users)
       .where(eq(users.id, payload.id));
