@@ -77,7 +77,7 @@ export default function HomePage() {
 
       {/* Main Content Area: Clean / Empty State as requested */}
       <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col items-center justify-center px-4 py-12 sm:px-6">
-        <div className="w-full max-w-md text-center">
+        <div className="w-full max-w-md text-center -translate-y-[10vh]">
           <LayerCard className="p-8 ring ring-kumo-line">
             <div className="mb-4 flex flex-col items-center justify-center">
               <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-kumo-control ring ring-kumo-line text-kumo-subtle">
