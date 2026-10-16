@@ -18,6 +18,9 @@ import {
   FloppyDisk,
   Camera,
   SpinnerGap,
+  PencilSimple,
+  Trash,
+  X,
 } from "@phosphor-icons/react";
 import UserAvatar from "@/components/UserAvatar";
 import AppNavbar from "@/components/AppNavbar";
@@ -58,6 +61,10 @@ export default function ProfilePage() {
   const [uploading, setUploading] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Name edit modal state
+  const [isNameModalOpen, setIsNameModalOpen] = useState(false);
+  const [tempName, setTempName] = useState("");
 
   // Dynamic Options from Database
   const [departmentsList, setDepartmentsList] = useState<DepartmentItem[]>([]);
@@ -156,6 +163,7 @@ export default function ProfilePage() {
       }
 
       setFormData((prev) => ({ ...prev, avatarUrl: data.url }));
+      setCurrentUser((prev) => prev ? { ...prev, avatarUrl: data.url } : null);
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (err: any) {
@@ -163,6 +171,26 @@ export default function ProfilePage() {
     } finally {
       setUploading(false);
     }
+  };
+
+  const handleRemoveAvatar = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setFormData((prev) => ({ ...prev, avatarUrl: "" }));
+    setCurrentUser((prev) => prev ? { ...prev, avatarUrl: null } : null);
+  };
+
+  const handleOpenNameModal = () => {
+    setTempName(formData.name);
+    setIsNameModalOpen(true);
+  };
+
+  const handleSaveNameModal = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (tempName.trim()) {
+      setFormData((prev) => ({ ...prev, name: tempName.trim() }));
+      setCurrentUser((prev) => prev ? { ...prev, name: tempName.trim() } : null);
+    }
+    setIsNameModalOpen(false);
   };
 
   const handleSaveProfile = async (e: React.FormEvent) => {
@@ -237,94 +265,76 @@ export default function ProfilePage() {
 
         <form onSubmit={handleSaveProfile} className="space-y-6">
           <LayerCard className="p-8 ring ring-kumo-line rounded-xl bg-kumo-base shadow-sm">
-            {/* Header: Avatar & Photo Action */}
+            {/* Header: Clickable Avatar on left, Large Name & Email on right */}
             <div className="flex items-center gap-6 pb-8 border-b border-kumo-line">
-              <div className="relative group shrink-0">
+              <input
+                type="file"
+                ref={fileInputRef}
+                accept="image/*"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+
+              {/* Clickable Avatar with sleek hover overlay */}
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                className="relative group shrink-0 cursor-pointer"
+                title="Click to change photo"
+              >
                 <UserAvatar
                   src={formData.avatarUrl || null}
                   name={formData.name}
-                  size={80}
+                  size={84}
                   className="ring-2 ring-kumo-line rounded-full"
                 />
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading}
-                  className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 text-white opacity-0 transition-opacity group-hover:opacity-100 disabled:opacity-50"
-                  title="Upload new image"
-                >
+
+                {/* Hover Overlay */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center rounded-full bg-black/50 text-white opacity-0 transition-opacity duration-150 group-hover:opacity-100">
                   {uploading ? (
-                    <SpinnerGap weight="thin" size={24} className="animate-spin" />
+                    <SpinnerGap weight="thin" size={26} className="animate-spin" />
                   ) : (
-                    <Camera weight="thin" size={24} />
-                  )}
-                </button>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  accept="image/*"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                />
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    type="button"
-                    disabled={uploading}
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    <Camera weight="thin" size={16} className="mr-1.5" />
-                    <span>{uploading ? "Uploading..." : "Upload photo"}</span>
-                  </Button>
-
-                  {formData.avatarUrl && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      type="button"
-                      onClick={() => setFormData({ ...formData, avatarUrl: "" })}
-                    >
-                      Remove
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Camera weight="thin" size={22} />
+                      {formData.avatarUrl && (
+                        <button
+                          type="button"
+                          onClick={handleRemoveAvatar}
+                          title="Remove photo"
+                          className="p-1 hover:text-red-400 transition-colors"
+                        >
+                          <Trash weight="thin" size={18} />
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
+              </div>
+
+              {/* Name & Email block */}
+              <div className="flex flex-col gap-1 min-w-0">
+                <div
+                  onClick={handleOpenNameModal}
+                  className="group inline-flex items-center gap-2 cursor-pointer select-none"
+                  title="Click to edit name"
+                >
+                  <h2 className="text-xl font-semibold text-kumo-default truncate group-hover:text-kumo-brand transition-colors">
+                    {formData.name || "Add your name"}
+                  </h2>
+                  <PencilSimple
+                    weight="thin"
+                    size={16}
+                    className="text-kumo-subtle opacity-0 group-hover:opacity-100 group-hover:text-kumo-brand transition-opacity"
+                  />
+                </div>
+                <p className="text-xs text-kumo-subtle truncate">
+                  {formData.email}
+                </p>
               </div>
             </div>
 
-            {/* Form Fields: Clean 2-column Grid with Generous Spacing */}
+            {/* Form Fields: Remaining 4 Clean Inputs (Student ID, Phone, Department, Class & Group) */}
             <div className="pt-8 space-y-6">
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                <div className="grid gap-1.5">
-                  <label className="text-xs font-medium text-kumo-default">Full name</label>
-                  <div className="relative">
-                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-kumo-subtle">
-                      <User weight="thin" size={16} />
-                    </div>
-                    <input
-                      type="text"
-                      required
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full rounded-md border border-kumo-line bg-kumo-control py-2 pl-9 pr-3 text-xs text-kumo-default placeholder:text-kumo-subtle focus:border-kumo-brand focus:outline-none"
-                      placeholder="นาย พิชญุตม์ สมบูรณ์"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid gap-1.5">
-                  <label className="text-xs font-medium text-kumo-default">Email</label>
-                  <input
-                    type="email"
-                    disabled
-                    value={formData.email}
-                    className="w-full rounded-md border border-kumo-line bg-kumo-tint py-2 px-3 text-xs text-kumo-subtle cursor-not-allowed"
-                  />
-                </div>
-
                 <div className="grid gap-1.5">
                   <label className="text-xs font-medium text-kumo-default">Student ID</label>
                   <div className="relative">
@@ -406,6 +416,58 @@ export default function ProfilePage() {
           </LayerCard>
         </form>
       </main>
+
+      {/* Edit Name Modal */}
+      {isNameModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
+          <div className="w-full max-w-sm rounded-xl border border-kumo-line bg-kumo-base p-6 shadow-xl space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-kumo-default">Edit full name</h3>
+              <button
+                type="button"
+                onClick={() => setIsNameModalOpen(false)}
+                className="text-kumo-subtle hover:text-kumo-default transition-colors"
+              >
+                <X weight="thin" size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveNameModal} className="space-y-4">
+              <div className="grid gap-1.5">
+                <label className="text-xs font-medium text-kumo-default">Name</label>
+                <div className="relative">
+                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-kumo-subtle">
+                    <User weight="thin" size={16} />
+                  </div>
+                  <input
+                    type="text"
+                    required
+                    autoFocus
+                    value={tempName}
+                    onChange={(e) => setTempName(e.target.value)}
+                    className="w-full rounded-md border border-kumo-line bg-kumo-control py-2 pl-9 pr-3 text-xs text-kumo-default placeholder:text-kumo-subtle focus:border-kumo-brand focus:outline-none"
+                    placeholder="นาย พิชญุตม์ สมบูรณ์"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  type="button"
+                  onClick={() => setIsNameModalOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button variant="primary" size="sm" type="submit">
+                  Apply
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
