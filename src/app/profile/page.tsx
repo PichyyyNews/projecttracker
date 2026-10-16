@@ -249,20 +249,6 @@ export default function ProfilePage() {
       {/* Main Content Area */}
       <main className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
 
-        {saveSuccess && (
-          <div className="mb-6 flex items-center gap-2 rounded border border-green-200 bg-green-50 p-3 text-xs text-green-700 dark:border-green-900/40 dark:bg-green-950/20 dark:text-green-400">
-            <CheckCircle weight="thin" size={16} />
-            <span>Profile updated successfully</span>
-          </div>
-        )}
-
-        {error && (
-          <div className="mb-6 flex items-center gap-2 rounded border border-red-200 bg-red-50 p-3 text-xs text-red-600 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-400">
-            <WarningCircle weight="thin" size={16} />
-            <span>{error}</span>
-          </div>
-        )}
-
         <form onSubmit={handleSaveProfile} className="space-y-6">
           <LayerCard className="p-8 ring ring-kumo-line rounded-xl bg-kumo-base shadow-sm">
             {/* Header: Clickable Avatar on left, Large Name & Email on right */}
@@ -467,6 +453,48 @@ export default function ProfilePage() {
             </form>
           </div>
         </div>
+      )}
+      {/* Responsive Toast Notification: Bottom-Right on Desktop, Compact Top on Mobile */}
+      {saveSuccess && (
+        <aside
+          role="status"
+          aria-live="polite"
+          className="fixed z-50 transition-all duration-300 ease-out 
+            top-4 left-4 right-4 sm:top-auto sm:left-auto sm:bottom-6 sm:right-6 sm:w-auto"
+        >
+          <div className="flex items-center gap-2.5 rounded-lg border border-green-500/30 bg-green-500/10 backdrop-blur-md px-4 py-2.5 text-xs font-medium text-green-700 dark:text-green-300 shadow-lg ring-1 ring-black/5 dark:bg-green-950/80">
+            <CheckCircle weight="fill" size={18} className="text-green-600 dark:text-green-400 shrink-0" />
+            <span className="truncate">Profile updated successfully</span>
+            <button
+              type="button"
+              onClick={() => setSaveSuccess(false)}
+              className="ml-2 text-green-600/70 hover:text-green-800 dark:text-green-400 dark:hover:text-green-200"
+            >
+              <X weight="bold" size={14} />
+            </button>
+          </div>
+        </aside>
+      )}
+
+      {error && (
+        <aside
+          role="alert"
+          aria-live="assertive"
+          className="fixed z-50 transition-all duration-300 ease-out 
+            top-4 left-4 right-4 sm:top-auto sm:left-auto sm:bottom-6 sm:right-6 sm:w-auto"
+        >
+          <div className="flex items-center gap-2.5 rounded-lg border border-red-500/30 bg-red-500/10 backdrop-blur-md px-4 py-2.5 text-xs font-medium text-red-700 dark:text-red-300 shadow-lg ring-1 ring-black/5 dark:bg-red-950/80">
+            <WarningCircle weight="fill" size={18} className="text-red-600 dark:text-red-400 shrink-0" />
+            <span className="truncate">{error}</span>
+            <button
+              type="button"
+              onClick={() => setError(null)}
+              className="ml-2 text-red-600/70 hover:text-red-800 dark:text-red-400 dark:hover:text-red-200"
+            >
+              <X weight="bold" size={14} />
+            </button>
+          </div>
+        </aside>
       )}
     </div>
   );
