@@ -216,13 +216,10 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-kumo-canvas">
       {/* Top Navbar matching Workspace Navbar */}
-      <AppNavbar currentUser={currentUser} subtitle="Profile Settings" />
+      <AppNavbar currentUser={currentUser} />
 
       {/* Main Content Area */}
-      <main className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
-        <div className="mb-8">
-          <h1 className="text-xl font-semibold text-kumo-default">Profile</h1>
-        </div>
+      <main className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
 
         {saveSuccess && (
           <div className="mb-6 flex items-center gap-2 rounded border border-green-200 bg-green-50 p-3 text-xs text-green-700 dark:border-green-900/40 dark:bg-green-950/20 dark:text-green-400">
