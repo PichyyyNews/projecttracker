@@ -45,13 +45,11 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
       <div className="mx-auto flex max-w-6xl items-center justify-between">
         {/* Brand / Logo */}
         <Link href="/" className="flex items-center gap-3 transition-opacity hover:opacity-85">
-          <div className="relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-md bg-kumo-base ring-1 ring-kumo-line">
-            <img
-              src="/logo.png"
-              alt="Project Tracker Logo"
-              className="h-full w-full object-contain p-0.5"
-            />
-          </div>
+          <img
+            src="/logo.svg"
+            alt="Project Tracker Logo"
+            className="h-9 w-9 object-contain shrink-0"
+          />
           <div className="flex flex-col">
             <span className="font-semibold text-kumo-default">Project Tracker</span>
             <span className="text-xs text-kumo-subtle">{subtitle}</span>

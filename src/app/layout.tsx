@@ -17,9 +17,9 @@ export const metadata: Metadata = {
   title: "Project Tracker",
   description: "Cloudflare Kumo UI Project Tracker with PostgreSQL",
   icons: {
-    icon: "/logo.png",
-    shortcut: "/logo.png",
-    apple: "/logo.png",
+    icon: "/logo.svg",
+    shortcut: "/logo.svg",
+    apple: "/logo.svg",
   },
 };
 

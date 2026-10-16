@@ -106,9 +106,7 @@ export default function RegisterPage() {
         <LayerCard className="p-6 ring ring-kumo-line rounded-lg bg-kumo-base">
           {/* Brand / Logo Header inside Card */}
           <div className="mb-6 flex flex-col items-center text-center">
-            <div className="mb-3 flex h-12 w-12 items-center justify-center overflow-hidden rounded-lg bg-kumo-base ring-1 ring-kumo-line p-1">
-              <img src="/logo.png" alt="Logo" className="h-full w-full object-contain" />
-            </div>
+            <img src="/logo.svg" alt="Logo" className="mb-3 h-14 w-14 object-contain" />
             <h1 className="text-lg font-semibold text-kumo-default">Create your account</h1>
             <p className="mt-1 text-xs text-kumo-subtle">
               Start tracking and deploying your projects.
