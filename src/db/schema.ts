@@ -5,7 +5,7 @@ export const users = pgTable("users", {
   name: varchar("name", { length: 255 }).notNull(),
   email: varchar("email", { length: 255 }).notNull().unique(),
   passwordHash: text("password_hash"), // null if registered with Google
-  role: varchar("role", { length: 50 }).notNull().default("user"), // user, admin
+  role: varchar("role", { length: 50 }).notNull().default("student"), // admin, advisor, instructor, student
   avatarUrl: text("avatar_url"),
   provider: varchar("provider", { length: 50 }).notNull().default("credentials"), // credentials, google
   status: varchar("status", { length: 50 }).notNull().default("active"), // active, suspended

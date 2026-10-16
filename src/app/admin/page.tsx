@@ -27,6 +27,7 @@ import {
   UserCircle,
 } from "@phosphor-icons/react";
 import UserAvatar from "@/components/UserAvatar";
+import { USER_ROLES, ROLE_OPTIONS, UserRole } from "@/lib/roles";
 
 interface AdminUser {
   id: number;
@@ -151,6 +152,23 @@ export default function AdminPage() {
       }
     } catch (err) {
       alert("Failed to update user status");
+    }
+  };
+
+  const handleUpdateUserRole = async (userId: number, newRole: string) => {
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: userId, role: newRole }),
+      });
+      if (res.ok) {
+        setUsersList(
+          usersList.map((u) => (u.id === userId ? { ...u, role: newRole } : u))
+        );
+      }
+    } catch (err) {
+      alert("Failed to update user role");
     }
   };
 
@@ -483,9 +501,17 @@ export default function AdminPage() {
                             </span>
                           </Table.Cell>
                           <Table.Cell>
-                            <Badge variant={user.role === "admin" ? "warning" : "neutral"}>
-                              {user.role}
-                            </Badge>
+                            <select
+                              value={user.role}
+                              onChange={(e) => handleUpdateUserRole(user.id, e.target.value)}
+                              className="rounded border border-kumo-line bg-kumo-control px-2 py-1 text-xs text-kumo-default focus:border-kumo-brand focus:outline-none"
+                            >
+                              {ROLE_OPTIONS.map((opt) => (
+                                <option key={opt.key} value={opt.key}>
+                                  {opt.label}
+                                </option>
+                              ))}
+                            </select>
                           </Table.Cell>
                           <Table.Cell>
                             <Badge variant={user.status === "active" ? "success" : "destructive"}>

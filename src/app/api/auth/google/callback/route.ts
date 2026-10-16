@@ -81,7 +81,7 @@ export async function GET(req: Request) {
           name: profile.name || profile.email.split("@")[0],
           email: profile.email.toLowerCase(),
           avatarUrl: profile.picture || null,
-          role: "user",
+          role: "student",
           provider: "google",
           status: "active",
         })

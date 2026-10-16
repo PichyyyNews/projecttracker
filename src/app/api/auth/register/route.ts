@@ -39,7 +39,7 @@ export async function POST(req: Request) {
         name: name.trim(),
         email: email.toLowerCase().trim(),
         passwordHash,
-        role: "user",
+        role: "student",
         provider: "credentials",
         status: "active",
       })

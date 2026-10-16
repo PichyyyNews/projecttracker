@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import {
   Button,
   LayerCard,
+  Badge,
 } from "@cloudflare/kumo";
 import {
   Kanban,
@@ -14,6 +15,7 @@ import {
   FolderOpen,
 } from "@phosphor-icons/react";
 import UserAvatar from "@/components/UserAvatar";
+import { USER_ROLES, UserRole } from "@/lib/roles";
 
 interface UserSession {
   id: number;
@@ -81,9 +83,20 @@ export default function HomePage() {
             <div className="flex items-center gap-2">
               <UserAvatar src={currentUser?.avatarUrl} name={currentUser?.name} size={30} />
               <div className="hidden flex-col text-left sm:flex">
-                <span className="text-xs font-medium text-kumo-default leading-tight">
-                  {currentUser?.name}
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-medium text-kumo-default leading-tight">
+                    {currentUser?.name}
+                  </span>
+                  {currentUser?.role && (
+                    <Badge
+                      variant={
+                        USER_ROLES[currentUser.role as UserRole]?.badgeVariant || "neutral"
+                      }
+                    >
+                      {USER_ROLES[currentUser.role as UserRole]?.label || currentUser.role}
+                    </Badge>
+                  )}
+                </div>
                 <span className="text-[11px] text-kumo-subtle leading-tight">
                   {currentUser?.email}
                 </span>
