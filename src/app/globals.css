@@ -2,7 +2,45 @@
 @import "@cloudflare/kumo/styles/tailwind";
 @import "tailwindcss";
 
+/* 
+ * Project Tracker Blue Theme Tokens
+ * Highlight & Primary Brand: Electric Blue (#2563EB / #3B82F6)
+ */
+@theme {
+  --color-brand-blue-50: #eff6ff;
+  --color-brand-blue-100: #dbeafe;
+  --color-brand-blue-200: #bfdbfe;
+  --color-brand-blue-500: #3b82f6;
+  --color-brand-blue-600: #2563eb;
+  --color-brand-blue-700: #1d4ed8;
+
+  /* Override Kumo brand & highlight color tokens to Blue */
+  --color-kumo-brand: var(--color-brand-blue-600);
+  --color-kumo-brand-hover: var(--color-brand-blue-700);
+  --text-color-kumo-brand: var(--color-brand-blue-600);
+}
+
 @layer base {
+  :root,
+  [data-theme="kumo"],
+  [data-mode="light"] {
+    --color-kumo-brand: #2563eb;
+    --color-kumo-brand-hover: #1d4ed8;
+    --text-color-kumo-brand: #2563eb;
+    --text-color-kumo-link: #2563eb;
+    --color-kumo-focus: #2563eb;
+    --color-kumo-tint: #f0f7ff;
+  }
+
+  [data-mode="dark"] {
+    --color-kumo-brand: #3b82f6;
+    --color-kumo-brand-hover: #2563eb;
+    --text-color-kumo-brand: #3b82f6;
+    --text-color-kumo-link: #60a5fa;
+    --color-kumo-focus: #3b82f6;
+    --color-kumo-tint: rgba(37, 99, 235, 0.12);
+  }
+
   body {
     @apply bg-kumo-canvas text-kumo-default font-sans antialiased text-sm;
   }
