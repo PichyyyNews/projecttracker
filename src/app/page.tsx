@@ -114,8 +114,8 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
-              <Button variant="primary">
+            <div className="mt-6 flex justify-center">
+              <Button variant="primary" className="inline-flex items-center justify-center">
                 <Plus weight="thin" size={16} className="mr-1.5" />
                 <span>Create your first project</span>
               </Button>
