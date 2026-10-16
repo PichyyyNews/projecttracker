@@ -97,7 +97,7 @@ export default function HomePage() {
                   <span className="text-xs font-semibold text-kumo-default leading-tight">
                     {currentUser?.name}
                   </span>
-                  {currentUser?.role && (
+                  {currentUser?.role && currentUser.role !== "student" && (
                     <Badge
                       variant={
                         USER_ROLES[currentUser.role as UserRole]?.badgeVariant || "neutral"
