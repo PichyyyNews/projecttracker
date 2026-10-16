@@ -238,16 +238,16 @@ export default function ProfilePage() {
           </div>
         )}
 
-        <form onSubmit={handleSaveProfile} className="space-y-8">
-          {/* Section 1: Avatar with MinIO File Upload */}
-          <LayerCard className="p-6 ring ring-kumo-line rounded-lg bg-kumo-base space-y-6">
-            <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-              <div className="relative group">
+        <form onSubmit={handleSaveProfile} className="space-y-6">
+          <LayerCard className="p-8 ring ring-kumo-line rounded-xl bg-kumo-base shadow-sm">
+            {/* Header: Avatar & Photo Action */}
+            <div className="flex items-center gap-6 pb-8 border-b border-kumo-line">
+              <div className="relative group shrink-0">
                 <UserAvatar
                   src={formData.avatarUrl || null}
                   name={formData.name}
-                  size={72}
-                  className="ring-2 ring-kumo-line"
+                  size={80}
+                  className="ring-2 ring-kumo-line rounded-full"
                 />
                 <button
                   type="button"
@@ -264,7 +264,7 @@ export default function ProfilePage() {
                 </button>
               </div>
 
-              <div className="space-y-2">
+              <div className="flex flex-col gap-2">
                 <input
                   type="file"
                   ref={fileInputRef}
@@ -272,7 +272,6 @@ export default function ProfilePage() {
                   onChange={handleFileUpload}
                   className="hidden"
                 />
-
                 <div className="flex items-center gap-2">
                   <Button
                     variant="secondary"
@@ -299,120 +298,115 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-              <div className="grid gap-1.5">
-                <label className="text-xs font-medium text-kumo-default">Full name</label>
-                <div className="relative">
-                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-2.5 text-kumo-subtle">
-                    <User weight="thin" size={15} />
+            {/* Form Fields: Clean 2-column Grid with Generous Spacing */}
+            <div className="pt-8 space-y-6">
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                <div className="grid gap-1.5">
+                  <label className="text-xs font-medium text-kumo-default">Full name</label>
+                  <div className="relative">
+                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-kumo-subtle">
+                      <User weight="thin" size={16} />
+                    </div>
+                    <input
+                      type="text"
+                      required
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="w-full rounded-md border border-kumo-line bg-kumo-control py-2 pl-9 pr-3 text-xs text-kumo-default placeholder:text-kumo-subtle focus:border-kumo-brand focus:outline-none"
+                      placeholder="นาย พิชญุตม์ สมบูรณ์"
+                    />
                   </div>
+                </div>
+
+                <div className="grid gap-1.5">
+                  <label className="text-xs font-medium text-kumo-default">Email</label>
                   <input
-                    type="text"
-                    required
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full rounded border border-kumo-line bg-kumo-control py-1.5 pl-8 pr-2.5 text-xs text-kumo-default placeholder:text-kumo-subtle focus:border-kumo-brand focus:outline-none"
-                    placeholder="นาย พิชญุตม์ สมบูรณ์"
+                    type="email"
+                    disabled
+                    value={formData.email}
+                    className="w-full rounded-md border border-kumo-line bg-kumo-tint py-2 px-3 text-xs text-kumo-subtle cursor-not-allowed"
                   />
                 </div>
-              </div>
 
-              <div className="grid gap-1.5">
-                <label className="text-xs font-medium text-kumo-default">Email</label>
-                <input
-                  type="email"
-                  disabled
-                  value={formData.email}
-                  className="w-full rounded border border-kumo-line bg-kumo-tint py-1.5 px-2.5 text-xs text-kumo-subtle cursor-not-allowed"
-                />
-              </div>
-
-              <div className="grid gap-1.5">
-                <label className="text-xs font-medium text-kumo-default">Student ID</label>
-                <div className="relative">
-                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-2.5 text-kumo-subtle">
-                    <IdentificationCard weight="thin" size={15} />
+                <div className="grid gap-1.5">
+                  <label className="text-xs font-medium text-kumo-default">Student ID</label>
+                  <div className="relative">
+                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-kumo-subtle">
+                      <IdentificationCard weight="thin" size={16} />
+                    </div>
+                    <input
+                      type="text"
+                      value={formData.studentId}
+                      onChange={(e) => setFormData({ ...formData, studentId: e.target.value })}
+                      className="w-full rounded-md border border-kumo-line bg-kumo-control py-2 pl-9 pr-3 text-xs font-mono text-[0.9em] text-kumo-default placeholder:text-kumo-subtle focus:border-kumo-brand focus:outline-none"
+                      placeholder="663090100xx"
+                    />
                   </div>
-                  <input
-                    type="text"
-                    value={formData.studentId}
-                    onChange={(e) => setFormData({ ...formData, studentId: e.target.value })}
-                    className="w-full rounded border border-kumo-line bg-kumo-control py-1.5 pl-8 pr-2.5 text-xs font-mono text-[0.9em] text-kumo-default placeholder:text-kumo-subtle focus:border-kumo-brand focus:outline-none"
-                    placeholder="663090100xx"
-                  />
                 </div>
-              </div>
 
-              <div className="grid gap-1.5">
-                <label className="text-xs font-medium text-kumo-default">Phone</label>
-                <div className="relative">
-                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-2.5 text-kumo-subtle">
-                    <Phone weight="thin" size={15} />
+                <div className="grid gap-1.5">
+                  <label className="text-xs font-medium text-kumo-default">Phone</label>
+                  <div className="relative">
+                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-kumo-subtle">
+                      <Phone weight="thin" size={16} />
+                    </div>
+                    <input
+                      type="tel"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      className="w-full rounded-md border border-kumo-line bg-kumo-control py-2 pl-9 pr-3 text-xs text-kumo-default placeholder:text-kumo-subtle focus:border-kumo-brand focus:outline-none"
+                      placeholder="08x-xxx-xxxx"
+                    />
                   </div>
-                  <input
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full rounded border border-kumo-line bg-kumo-control py-1.5 pl-8 pr-2.5 text-xs text-kumo-default placeholder:text-kumo-subtle focus:border-kumo-brand focus:outline-none"
-                    placeholder="08x-xxx-xxxx"
-                  />
+                </div>
+
+                <div className="grid gap-1.5">
+                  <label className="text-xs font-medium text-kumo-default">Department</label>
+                  <select
+                    value={formData.department}
+                    onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                    className="w-full rounded-md border border-kumo-line bg-kumo-control py-2 px-3 text-xs text-kumo-default focus:border-kumo-brand focus:outline-none"
+                  >
+                    {departmentsList.map((dept) => (
+                      <option key={dept.id} value={dept.name}>
+                        {dept.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid gap-1.5">
+                  <label className="text-xs font-medium text-kumo-default">Class & Group</label>
+                  <select
+                    value={formData.selectedAcademicIndex}
+                    onChange={(e) =>
+                      setFormData({ ...formData, selectedAcademicIndex: parseInt(e.target.value, 10) })
+                    }
+                    className="w-full rounded-md border border-kumo-line bg-kumo-control py-2 px-3 text-xs text-kumo-default focus:border-kumo-brand focus:outline-none font-medium truncate"
+                  >
+                    {academicClassesList.map((ag, idx) => (
+                      <option key={ag.id} value={idx}>
+                        {ag.yearLevel} - กลุ่ม {ag.studyGroup} : {ag.major}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </div>
-          </LayerCard>
 
-          {/* Section 2: Academic Department & Dynamic Class Groups Dropdowns */}
-          <LayerCard className="p-6 ring ring-kumo-line rounded-lg bg-kumo-base space-y-5">
-            <h2 className="text-sm font-semibold text-kumo-default">Academic details</h2>
-
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-              <div className="grid gap-1.5">
-                <label className="text-xs font-medium text-kumo-default">Department</label>
-                <select
-                  value={formData.department}
-                  onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                  className="w-full rounded border border-kumo-line bg-kumo-control py-1.5 px-2.5 text-xs text-kumo-default focus:border-kumo-brand focus:outline-none"
-                >
-                  {departmentsList.map((dept) => (
-                    <option key={dept.id} value={dept.name}>
-                      {dept.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Dynamic Academic Dropdown */}
-              <div className="grid gap-1.5">
-                <label className="text-xs font-medium text-kumo-default">Class & Group</label>
-                <select
-                  value={formData.selectedAcademicIndex}
-                  onChange={(e) =>
-                    setFormData({ ...formData, selectedAcademicIndex: parseInt(e.target.value, 10) })
-                  }
-                  className="w-full rounded border border-kumo-line bg-kumo-control py-1.5 px-2.5 text-xs text-kumo-default focus:border-kumo-brand focus:outline-none font-medium"
-                >
-                  {academicClassesList.map((ag, idx) => (
-                    <option key={ag.id} value={idx}>
-                      {ag.yearLevel} - กลุ่ม {ag.studyGroup} : {ag.major}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </LayerCard>
-
-          {/* Form Actions */}
-          <div className="flex justify-end gap-2">
-            <Link href="/">
-              <Button variant="secondary" type="button">
-                Cancel
+            {/* Bottom Actions inside the Card */}
+            <div className="mt-8 pt-6 border-t border-kumo-line flex items-center justify-end gap-3">
+              <Link href="/">
+                <Button variant="secondary" type="button">
+                  Cancel
+                </Button>
+              </Link>
+              <Button variant="primary" type="submit" disabled={saving || uploading}>
+                <FloppyDisk weight="thin" size={16} className="mr-1.5" />
+                <span>{saving ? "Saving changes..." : "Save profile"}</span>
               </Button>
-            </Link>
-            <Button variant="primary" type="submit" disabled={saving || uploading}>
-              <FloppyDisk weight="thin" size={16} className="mr-1.5" />
-              <span>{saving ? "Saving changes..." : "Save profile"}</span>
-            </Button>
-          </div>
+            </div>
+          </LayerCard>
         </form>
       </main>
     </div>
