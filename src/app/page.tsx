@@ -83,10 +83,11 @@ export default function HomePage() {
               <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-kumo-control ring ring-kumo-line text-kumo-subtle">
                 <FolderOpen weight="thin" size={32} />
               </div>
-              <h2 className="text-base font-semibold text-kumo-default">No projects yet</h2>
-              <p className="mt-1 text-xs text-kumo-subtle">
-                Your workspace is empty and ready. You are currently logged in as{" "}
-                <span className="font-medium text-kumo-default">{currentUser?.email}</span>.
+              <h2 className="text-lg font-semibold tracking-tight text-kumo-default">
+                No projects yet
+              </h2>
+              <p className="mt-2 text-sm text-kumo-subtle leading-relaxed max-w-xs">
+                Your workspace is empty and ready. Start by creating your first project to track progress.
               </p>
             </div>
 
