@@ -13,6 +13,10 @@ import {
   SignOut,
   Plus,
   FolderOpen,
+  CaretDown,
+  User,
+  EnvelopeSimple,
+  Gear,
 } from "@phosphor-icons/react";
 import UserAvatar from "@/components/UserAvatar";
 import { USER_ROLES, UserRole } from "@/lib/roles";
@@ -29,6 +33,7 @@ export default function HomePage() {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<UserSession | null>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   useEffect(() => {
     async function checkSession() {
@@ -79,12 +84,17 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <UserAvatar src={currentUser?.avatarUrl} name={currentUser?.name} size={30} />
+          <div className="relative">
+            {/* Profile Trigger Button */}
+            <button
+              type="button"
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              className="flex items-center gap-2 rounded-lg p-1.5 transition-none hover:bg-kumo-tint focus:outline-none"
+            >
+              <UserAvatar src={currentUser?.avatarUrl} name={currentUser?.name} size={32} />
               <div className="hidden flex-col text-left sm:flex">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-medium text-kumo-default leading-tight">
+                  <span className="text-xs font-semibold text-kumo-default leading-tight">
                     {currentUser?.name}
                   </span>
                   {currentUser?.role && (
@@ -101,12 +111,85 @@ export default function HomePage() {
                   {currentUser?.email}
                 </span>
               </div>
-            </div>
+              <CaretDown
+                weight="thin"
+                size={14}
+                className={`text-kumo-subtle transition-transform duration-200 ${
+                  isDropdownOpen ? "rotate-180" : ""
+                }`}
+              />
+            </button>
 
-            <Button variant="secondary" size="sm" onClick={handleLogout}>
-              <SignOut weight="thin" size={16} className="sm:mr-1" />
-              <span className="hidden sm:inline">Sign out</span>
-            </Button>
+            {/* Backdrop click closer */}
+            {isDropdownOpen && (
+              <div
+                className="fixed inset-0 z-30"
+                onClick={() => setIsDropdownOpen(false)}
+              />
+            )}
+
+            {/* Profile Dropdown Menu */}
+            {isDropdownOpen && (
+              <div className="absolute right-0 top-full z-40 mt-1.5 w-60 rounded-md border border-kumo-line bg-kumo-base py-1.5 shadow-lg ring ring-kumo-line">
+                {/* Header Profile Info inside dropdown */}
+                <div className="border-b border-kumo-line px-3 py-2">
+                  <div className="font-semibold text-xs text-kumo-default">
+                    {currentUser?.name}
+                  </div>
+                  <div className="text-[11px] text-kumo-subtle truncate">
+                    {currentUser?.email}
+                  </div>
+                </div>
+
+                {/* Dropdown Items: Profile, Mail, Setting, Sign Out */}
+                <div className="py-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsDropdownOpen(false);
+                      alert("Opening Profile: " + currentUser?.name);
+                    }}
+                    className="flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium text-kumo-default hover:bg-kumo-tint transition-none"
+                  >
+                    <User weight="thin" size={16} className="text-kumo-subtle" />
+                    <span>Profile</span>
+                  </button>
+
+                  <a
+                    href={`mailto:${currentUser?.email}`}
+                    onClick={() => setIsDropdownOpen(false)}
+                    className="flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium text-kumo-default hover:bg-kumo-tint transition-none"
+                  >
+                    <EnvelopeSimple weight="thin" size={16} className="text-kumo-subtle" />
+                    <span>Mail</span>
+                  </a>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsDropdownOpen(false);
+                      alert("Opening Settings");
+                    }}
+                    className="flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium text-kumo-default hover:bg-kumo-tint transition-none"
+                  >
+                    <Gear weight="thin" size={16} className="text-kumo-subtle" />
+                    <span>Settings</span>
+                  </button>
+                </div>
+
+                {/* Sign Out Action */}
+                <div className="border-t border-kumo-line pt-1">
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 transition-none"
+                  >
+                    <SignOut weight="thin" size={16} />
+                    <span>Sign out</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </header>
