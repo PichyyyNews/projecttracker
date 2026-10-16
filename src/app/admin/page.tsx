@@ -9,7 +9,6 @@ import {
 } from "@cloudflare/kumo";
 import {
   LockKey,
-  ShieldCheck,
   Users,
   GoogleLogo,
   CheckCircle,
@@ -19,7 +18,13 @@ import {
   FloppyDisk,
   Key,
   Shield,
-  ArrowSquareOut,
+  Gear,
+  Kanban,
+  ChartBar,
+  Database,
+  ListDashes,
+  UserCheck,
+  UserCircle,
 } from "@phosphor-icons/react";
 
 interface AdminUser {
@@ -40,14 +45,16 @@ interface GoogleConfigData {
   is_configured: boolean;
 }
 
+type AdminSection = "users" | "google" | "overview" | "system";
+
 export default function AdminPage() {
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
   const [pin, setPin] = useState("");
   const [pinError, setPinError] = useState<string | null>(null);
   const [pinLoading, setPinLoading] = useState(false);
 
-  // Admin Dashboard State
-  const [activeTab, setActiveTab] = useState<"users" | "google">("users");
+  // Active section in Sidebar
+  const [activeSection, setActiveSection] = useState<AdminSection>("users");
   const [usersList, setUsersList] = useState<AdminUser[]>([]);
   const [googleConfig, setGoogleConfig] = useState<GoogleConfigData>({
     google_client_id: "",
@@ -241,238 +248,462 @@ export default function AdminPage() {
     );
   }
 
-  // 2. Full Admin Dashboard (Authorized)
+  // 2. Full Admin Dashboard with Sidebar Layout
   return (
-    <div className="flex min-h-screen flex-col bg-kumo-canvas">
-      {/* Top Navbar */}
-      <header className="sticky top-0 z-20 border-b border-kumo-line bg-kumo-base px-6 py-3">
-        <div className="mx-auto flex max-w-6xl items-center justify-between">
-          <div className="flex items-center gap-3">
+    <div className="flex min-h-screen bg-kumo-canvas">
+      {/* Sidebar Navigation */}
+      <aside className="sticky top-0 h-screen w-64 shrink-0 flex-col justify-between border-r border-kumo-line bg-kumo-base hidden md:flex">
+        <div className="flex flex-col">
+          {/* Sidebar Header */}
+          <div className="flex items-center gap-3 border-b border-kumo-line px-5 py-4">
             <div className="flex h-8 w-8 items-center justify-center rounded-md bg-red-600 text-white">
               <Shield weight="thin" size={20} />
             </div>
             <div className="flex flex-col">
-              <span className="font-semibold text-kumo-default">Admin console</span>
-              <span className="text-xs text-kumo-subtle">PIN Verified &bull; Secret path</span>
+              <span className="font-semibold text-kumo-default text-sm">Admin console</span>
+              <span className="text-[11px] text-kumo-subtle">PIN 030347 Verified</span>
             </div>
           </div>
+
+          {/* Navigation Section */}
+          <nav className="p-3">
+            <div className="mb-2 px-3 text-[11px] font-medium uppercase tracking-wider text-kumo-subtle">
+              Management
+            </div>
+            <div className="grid gap-1">
+              <button
+                type="button"
+                onClick={() => setActiveSection("users")}
+                className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition-none ${
+                  activeSection === "users"
+                    ? "bg-kumo-tint text-kumo-brand"
+                    : "text-kumo-default hover:bg-kumo-tint"
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <Users weight="thin" size={18} />
+                  <span>Users directory</span>
+                </div>
+                <Badge variant="neutral">{usersList.length}</Badge>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveSection("google")}
+                className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition-none ${
+                  activeSection === "google"
+                    ? "bg-kumo-tint text-kumo-brand"
+                    : "text-kumo-default hover:bg-kumo-tint"
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <GoogleLogo weight="thin" size={18} />
+                  <span>Google OAuth</span>
+                </div>
+                {googleConfig.is_configured ? (
+                  <Badge variant="success">Active</Badge>
+                ) : (
+                  <Badge variant="warning">Setup</Badge>
+                )}
+              </button>
+            </div>
+
+            <div className="mt-6 mb-2 px-3 text-[11px] font-medium uppercase tracking-wider text-kumo-subtle">
+              System
+            </div>
+            <div className="grid gap-1">
+              <button
+                type="button"
+                onClick={() => setActiveSection("overview")}
+                className={`flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-none ${
+                  activeSection === "overview"
+                    ? "bg-kumo-tint text-kumo-brand"
+                    : "text-kumo-default hover:bg-kumo-tint"
+                }`}
+              >
+                <ChartBar weight="thin" size={18} />
+                <span>Overview metrics</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveSection("system")}
+                className={`flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-none ${
+                  activeSection === "system"
+                    ? "bg-kumo-tint text-kumo-brand"
+                    : "text-kumo-default hover:bg-kumo-tint"
+                }`}
+              >
+                <Database weight="thin" size={18} />
+                <span>Database & security</span>
+              </button>
+            </div>
+          </nav>
+        </div>
+
+        {/* Sidebar Footer with Logout */}
+        <div className="border-t border-kumo-line p-3">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleLogoutAdmin}
+            className="w-full justify-center"
+          >
+            <SignOut weight="thin" size={16} className="mr-1.5" />
+            <span>Lock admin console</span>
+          </Button>
+        </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <div className="flex flex-1 flex-col overflow-y-auto">
+        {/* Mobile Header / Quick Switcher */}
+        <header className="sticky top-0 z-20 flex items-center justify-between border-b border-kumo-line bg-kumo-base px-4 py-3 md:hidden">
+          <div className="flex items-center gap-2">
+            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-red-600 text-white">
+              <Shield weight="thin" size={16} />
+            </div>
+            <span className="font-semibold text-sm text-kumo-default">Admin console</span>
+          </div>
+
           <div className="flex items-center gap-2">
             <Button variant="secondary" size="sm" onClick={handleLogoutAdmin}>
-              <SignOut weight="thin" size={16} className="mr-1" />
-              <span>Lock console</span>
+              <SignOut weight="thin" size={14} />
             </Button>
           </div>
-        </div>
-      </header>
+        </header>
 
-      {/* Main Admin Content */}
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">
-        {/* Navigation Tabs */}
-        <div className="mb-6 flex border-b border-kumo-line">
+        {/* Mobile Horizontal Section Tabs */}
+        <div className="flex overflow-x-auto border-b border-kumo-line bg-kumo-base px-2 md:hidden">
           <button
-            onClick={() => setActiveTab("users")}
-            className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium ${
-              activeTab === "users"
+            onClick={() => setActiveSection("users")}
+            className={`whitespace-nowrap px-3 py-2 text-xs font-medium border-b-2 ${
+              activeSection === "users"
                 ? "border-kumo-brand text-kumo-brand"
-                : "border-transparent text-kumo-subtle hover:text-kumo-default"
+                : "border-transparent text-kumo-subtle"
             }`}
           >
-            <Users weight="thin" size={18} />
-            <span>User management</span>
-            <Badge variant="neutral">{usersList.length}</Badge>
+            Users ({usersList.length})
           </button>
           <button
-            onClick={() => setActiveTab("google")}
-            className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium ${
-              activeTab === "google"
+            onClick={() => setActiveSection("google")}
+            className={`whitespace-nowrap px-3 py-2 text-xs font-medium border-b-2 ${
+              activeSection === "google"
                 ? "border-kumo-brand text-kumo-brand"
-                : "border-transparent text-kumo-subtle hover:text-kumo-default"
+                : "border-transparent text-kumo-subtle"
             }`}
           >
-            <GoogleLogo weight="thin" size={18} />
-            <span>Google OAuth configuration</span>
-            {googleConfig.is_configured ? (
-              <Badge variant="success">Configured</Badge>
-            ) : (
-              <Badge variant="warning">Missing</Badge>
-            )}
+            Google OAuth
+          </button>
+          <button
+            onClick={() => setActiveSection("overview")}
+            className={`whitespace-nowrap px-3 py-2 text-xs font-medium border-b-2 ${
+              activeSection === "overview"
+                ? "border-kumo-brand text-kumo-brand"
+                : "border-transparent text-kumo-subtle"
+            }`}
+          >
+            Overview
+          </button>
+          <button
+            onClick={() => setActiveSection("system")}
+            className={`whitespace-nowrap px-3 py-2 text-xs font-medium border-b-2 ${
+              activeSection === "system"
+                ? "border-kumo-brand text-kumo-brand"
+                : "border-transparent text-kumo-subtle"
+            }`}
+          >
+            Database
           </button>
         </div>
 
-        {/* Tab 1: User Management */}
-        {activeTab === "users" && (
-          <div className="grid gap-6">
-            <div className="flex flex-col gap-1">
-              <h2 className="text-lg font-semibold text-kumo-default">Registered users</h2>
-              <p className="text-xs text-kumo-subtle">
-                Review all registered accounts, change status, or remove users.
-              </p>
-            </div>
-
-            <LayerCard className="overflow-hidden ring ring-kumo-line">
-              <Table>
-                <Table.Header>
-                  <Table.Row>
-                    <Table.Head>Name & Email</Table.Head>
-                    <Table.Head>Provider</Table.Head>
-                    <Table.Head>Role</Table.Head>
-                    <Table.Head>Status</Table.Head>
-                    <Table.Head>Joined</Table.Head>
-                    <Table.Head className="text-right">Actions</Table.Head>
-                  </Table.Row>
-                </Table.Header>
-                <Table.Body>
-                  {usersList.length === 0 ? (
-                    <Table.Row>
-                      <Table.Cell colSpan={6} className="py-8 text-center text-kumo-subtle">
-                        No registered users found in database.
-                      </Table.Cell>
-                    </Table.Row>
-                  ) : (
-                    usersList.map((user) => (
-                      <Table.Row key={user.id}>
-                        <Table.Cell>
-                          <div className="flex flex-col">
-                            <span className="font-medium text-kumo-default">{user.name}</span>
-                            <span className="text-xs text-kumo-subtle">{user.email}</span>
-                          </div>
-                        </Table.Cell>
-                        <Table.Cell>
-                          <span className="inline-flex items-center gap-1 text-xs">
-                            {user.provider === "google" ? (
-                              <>
-                                <GoogleLogo weight="thin" size={14} className="text-kumo-brand" />
-                                <span>Google</span>
-                              </>
-                            ) : (
-                              <span>Credentials</span>
-                            )}
-                          </span>
-                        </Table.Cell>
-                        <Table.Cell>
-                          <Badge variant={user.role === "admin" ? "warning" : "neutral"}>
-                            {user.role}
-                          </Badge>
-                        </Table.Cell>
-                        <Table.Cell>
-                          <Badge variant={user.status === "active" ? "success" : "destructive"}>
-                            {user.status}
-                          </Badge>
-                        </Table.Cell>
-                        <Table.Cell className="text-xs text-kumo-subtle">
-                          {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "—"}
-                        </Table.Cell>
-                        <Table.Cell className="text-right">
-                          <div className="flex items-center justify-end gap-1.5">
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              onClick={() => handleToggleUserStatus(user)}
-                            >
-                              {user.status === "active" ? "Suspend" : "Activate"}
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => handleDeleteUser(user.id)}
-                            >
-                              <Trash weight="thin" size={14} />
-                            </Button>
-                          </div>
-                        </Table.Cell>
-                      </Table.Row>
-                    ))
-                  )}
-                </Table.Body>
-              </Table>
-            </LayerCard>
-          </div>
-        )}
-
-        {/* Tab 2: Google OAuth Config */}
-        {activeTab === "google" && (
-          <div className="max-w-2xl">
-            <LayerCard className="p-6 ring ring-kumo-line">
-              <div className="mb-6 grid gap-1">
+        {/* Page Content per Active Sidebar Item */}
+        <main className="flex-1 p-6 md:p-8">
+          {/* 1. USERS DIRECTORY VIEW */}
+          {activeSection === "users" && (
+            <div className="grid gap-6">
+              <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-2">
-                  <GoogleLogo weight="thin" size={22} className="text-kumo-brand" />
-                  <h2 className="text-base font-semibold text-kumo-default">
-                    Google OAuth 2.0 credentials
-                  </h2>
+                  <h1 className="text-xl font-semibold text-kumo-default">Users directory</h1>
+                  <Badge variant="neutral">{usersList.length} registered</Badge>
                 </div>
                 <p className="text-xs text-kumo-subtle">
-                  Configure Client ID and Client Secret from your Google Cloud Console to enable
-                  Google Sign-In.
+                  Manage accounts, suspend access, or remove users from PostgreSQL database.
                 </p>
               </div>
 
-              {saveMessage && (
-                <div className="mb-4 flex items-center gap-2 rounded-md border border-green-200 bg-green-50 p-3 text-xs text-green-700 dark:border-green-900/40 dark:bg-green-950/20 dark:text-green-400">
-                  <CheckCircle weight="thin" size={16} />
-                  <span>{saveMessage}</span>
-                </div>
-              )}
+              <LayerCard className="overflow-hidden ring ring-kumo-line">
+                <Table>
+                  <Table.Header>
+                    <Table.Row>
+                      <Table.Head>Name & Email</Table.Head>
+                      <Table.Head>Auth method</Table.Head>
+                      <Table.Head>Role</Table.Head>
+                      <Table.Head>Status</Table.Head>
+                      <Table.Head>Joined date</Table.Head>
+                      <Table.Head className="text-right">Actions</Table.Head>
+                    </Table.Row>
+                  </Table.Header>
+                  <Table.Body>
+                    {usersList.length === 0 ? (
+                      <Table.Row>
+                        <Table.Cell colSpan={6} className="py-12 text-center text-kumo-subtle">
+                          <div className="flex flex-col items-center justify-center gap-1.5">
+                            <Users weight="thin" size={32} />
+                            <span className="font-medium">No registered users found</span>
+                            <span className="text-xs">
+                              Users who register or sign in with Google will show up here.
+                            </span>
+                          </div>
+                        </Table.Cell>
+                      </Table.Row>
+                    ) : (
+                      usersList.map((user) => (
+                        <Table.Row key={user.id}>
+                          <Table.Cell>
+                            <div className="flex items-center gap-2.5">
+                              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-kumo-control ring ring-kumo-line text-kumo-subtle">
+                                <UserCircle weight="thin" size={20} />
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="font-medium text-kumo-default">{user.name}</span>
+                                <span className="text-xs text-kumo-subtle">{user.email}</span>
+                              </div>
+                            </div>
+                          </Table.Cell>
+                          <Table.Cell>
+                            <span className="inline-flex items-center gap-1.5 text-xs">
+                              {user.provider === "google" ? (
+                                <>
+                                  <GoogleLogo weight="thin" size={14} className="text-kumo-brand" />
+                                  <span>Google OAuth</span>
+                                </>
+                              ) : (
+                                <span>Email / Password</span>
+                              )}
+                            </span>
+                          </Table.Cell>
+                          <Table.Cell>
+                            <Badge variant={user.role === "admin" ? "warning" : "neutral"}>
+                              {user.role}
+                            </Badge>
+                          </Table.Cell>
+                          <Table.Cell>
+                            <Badge variant={user.status === "active" ? "success" : "destructive"}>
+                              {user.status}
+                            </Badge>
+                          </Table.Cell>
+                          <Table.Cell className="text-xs text-kumo-subtle">
+                            {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "—"}
+                          </Table.Cell>
+                          <Table.Cell className="text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => handleToggleUserStatus(user)}
+                              >
+                                {user.status === "active" ? "Suspend" : "Activate"}
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleDeleteUser(user.id)}
+                              >
+                                <Trash weight="thin" size={14} />
+                              </Button>
+                            </div>
+                          </Table.Cell>
+                        </Table.Row>
+                      ))
+                    )}
+                  </Table.Body>
+                </Table>
+              </LayerCard>
+            </div>
+          )}
 
-              <form onSubmit={handleSaveGoogleConfig} className="grid gap-4">
-                <div className="grid gap-1.5">
-                  <label className="text-xs font-medium text-kumo-default">Google Client ID</label>
-                  <input
-                    type="text"
-                    className="w-full rounded-md border border-kumo-line bg-kumo-control py-2 px-3 text-sm font-mono text-[0.9em] text-kumo-default placeholder:text-kumo-subtle focus:border-kumo-brand focus:outline-none"
-                    placeholder="xxxxxxxxxxxx-xxxxxxxx.apps.googleusercontent.com"
-                    value={googleConfig.google_client_id}
-                    onChange={(e) =>
-                      setGoogleConfig({ ...googleConfig, google_client_id: e.target.value })
-                    }
-                    required
-                  />
+          {/* 2. GOOGLE OAUTH CONFIGURATION VIEW */}
+          {activeSection === "google" && (
+            <div className="max-w-2xl grid gap-6">
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2">
+                  <h1 className="text-xl font-semibold text-kumo-default">Google OAuth configuration</h1>
+                  {googleConfig.is_configured ? (
+                    <Badge variant="success">Configured</Badge>
+                  ) : (
+                    <Badge variant="warning">Missing</Badge>
+                  )}
                 </div>
+                <p className="text-xs text-kumo-subtle">
+                  Configure your Google Cloud Console credentials to enable Google Sign-In.
+                </p>
+              </div>
 
-                <div className="grid gap-1.5">
-                  <label className="text-xs font-medium text-kumo-default">Google Client Secret</label>
-                  <input
-                    type="password"
-                    className="w-full rounded-md border border-kumo-line bg-kumo-control py-2 px-3 text-sm font-mono text-[0.9em] text-kumo-default placeholder:text-kumo-subtle focus:border-kumo-brand focus:outline-none"
-                    placeholder="GOCSPX-xxxxxxxxxxxxxxxxxxxxxxxx"
-                    value={googleConfig.google_client_secret}
-                    onChange={(e) =>
-                      setGoogleConfig({ ...googleConfig, google_client_secret: e.target.value })
-                    }
-                  />
-                  <span className="text-[11px] text-kumo-subtle">
-                    Stored securely in your PostgreSQL database.
-                  </span>
-                </div>
+              <LayerCard className="p-6 ring ring-kumo-line">
+                {saveMessage && (
+                  <div className="mb-4 flex items-center gap-2 rounded-md border border-green-200 bg-green-50 p-3 text-xs text-green-700 dark:border-green-900/40 dark:bg-green-950/20 dark:text-green-400">
+                    <CheckCircle weight="thin" size={16} />
+                    <span>{saveMessage}</span>
+                  </div>
+                )}
 
-                <div className="grid gap-1.5">
-                  <label className="text-xs font-medium text-kumo-default">
-                    Authorized redirect URI
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full rounded-md border border-kumo-line bg-kumo-control py-2 px-3 text-sm font-mono text-[0.9em] text-kumo-default placeholder:text-kumo-subtle focus:border-kumo-brand focus:outline-none"
-                    value={googleConfig.google_redirect_uri}
-                    onChange={(e) =>
-                      setGoogleConfig({ ...googleConfig, google_redirect_uri: e.target.value })
-                    }
-                    required
-                  />
-                  <span className="text-[11px] text-kumo-subtle">
-                    Copy and paste this URI into your Google Cloud Credentials &gt; Authorized redirect URIs.
-                  </span>
-                </div>
+                <form onSubmit={handleSaveGoogleConfig} className="grid gap-4">
+                  <div className="grid gap-1.5">
+                    <label className="text-xs font-medium text-kumo-default">Google Client ID</label>
+                    <input
+                      type="text"
+                      className="w-full rounded-md border border-kumo-line bg-kumo-control py-2 px-3 text-sm font-mono text-[0.9em] text-kumo-default placeholder:text-kumo-subtle focus:border-kumo-brand focus:outline-none"
+                      placeholder="xxxxxxxxxxxx-xxxxxxxx.apps.googleusercontent.com"
+                      value={googleConfig.google_client_id}
+                      onChange={(e) =>
+                        setGoogleConfig({ ...googleConfig, google_client_id: e.target.value })
+                      }
+                      required
+                    />
+                  </div>
 
-                <div className="mt-2 flex justify-end">
-                  <Button variant="primary" type="submit" disabled={saveLoading}>
-                    <FloppyDisk weight="thin" size={16} className="mr-1.5" />
-                    <span>{saveLoading ? "Saving..." : "Save credentials"}</span>
-                  </Button>
+                  <div className="grid gap-1.5">
+                    <label className="text-xs font-medium text-kumo-default">Google Client Secret</label>
+                    <input
+                      type="password"
+                      className="w-full rounded-md border border-kumo-line bg-kumo-control py-2 px-3 text-sm font-mono text-[0.9em] text-kumo-default placeholder:text-kumo-subtle focus:border-kumo-brand focus:outline-none"
+                      placeholder="GOCSPX-xxxxxxxxxxxxxxxxxxxxxxxx"
+                      value={googleConfig.google_client_secret}
+                      onChange={(e) =>
+                        setGoogleConfig({ ...googleConfig, google_client_secret: e.target.value })
+                      }
+                    />
+                    <span className="text-[11px] text-kumo-subtle">
+                      Encrypted and stored in PostgreSQL table <code className="font-mono text-[0.9em]">system_configs</code>.
+                    </span>
+                  </div>
+
+                  <div className="grid gap-1.5">
+                    <label className="text-xs font-medium text-kumo-default">
+                      Authorized redirect URI
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full rounded-md border border-kumo-line bg-kumo-control py-2 px-3 text-sm font-mono text-[0.9em] text-kumo-default placeholder:text-kumo-subtle focus:border-kumo-brand focus:outline-none"
+                      value={googleConfig.google_redirect_uri}
+                      onChange={(e) =>
+                        setGoogleConfig({ ...googleConfig, google_redirect_uri: e.target.value })
+                      }
+                      required
+                    />
+                    <span className="text-[11px] text-kumo-subtle">
+                      Paste this URL in Google Cloud Console &gt; Credentials &gt; Authorized redirect URIs.
+                    </span>
+                  </div>
+
+                  <div className="mt-2 flex justify-end">
+                    <Button variant="primary" type="submit" disabled={saveLoading}>
+                      <FloppyDisk weight="thin" size={16} className="mr-1.5" />
+                      <span>{saveLoading ? "Saving..." : "Save credentials"}</span>
+                    </Button>
+                  </div>
+                </form>
+              </LayerCard>
+            </div>
+          )}
+
+          {/* 3. OVERVIEW METRICS VIEW */}
+          {activeSection === "overview" && (
+            <div className="grid gap-6">
+              <div className="flex flex-col gap-1">
+                <h1 className="text-xl font-semibold text-kumo-default">System overview</h1>
+                <p className="text-xs text-kumo-subtle">
+                  Summary statistics for users, authentication status, and runtime environment.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <LayerCard className="p-5 ring ring-kumo-line">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-kumo-subtle">Total accounts</span>
+                    <Users weight="thin" size={20} className="text-kumo-brand" />
+                  </div>
+                  <div className="mt-2 text-2xl font-semibold text-kumo-default">
+                    {usersList.length}
+                  </div>
+                  <div className="mt-1 text-xs text-kumo-subtle">
+                    {usersList.filter((u) => u.status === "active").length} active accounts
+                  </div>
+                </LayerCard>
+
+                <LayerCard className="p-5 ring ring-kumo-line">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-kumo-subtle">Google OAuth</span>
+                    <GoogleLogo weight="thin" size={20} className="text-kumo-brand" />
+                  </div>
+                  <div className="mt-2 text-2xl font-semibold text-kumo-default">
+                    {googleConfig.is_configured ? "Enabled" : "Disabled"}
+                  </div>
+                  <div className="mt-1 text-xs text-kumo-subtle">
+                    {usersList.filter((u) => u.provider === "google").length} users via Google
+                  </div>
+                </LayerCard>
+
+                <LayerCard className="p-5 ring ring-kumo-line">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-kumo-subtle">Database Status</span>
+                    <Database weight="thin" size={20} className="text-kumo-brand" />
+                  </div>
+                  <div className="mt-2 text-2xl font-semibold text-kumo-default">Connected</div>
+                  <div className="mt-1 text-xs text-kumo-subtle">PostgreSQL &bull; Drizzle ORM</div>
+                </LayerCard>
+              </div>
+            </div>
+          )}
+
+          {/* 4. DATABASE & SECURITY VIEW */}
+          {activeSection === "system" && (
+            <div className="max-w-2xl grid gap-6">
+              <div className="flex flex-col gap-1">
+                <h1 className="text-xl font-semibold text-kumo-default">Database & security settings</h1>
+                <p className="text-xs text-kumo-subtle">
+                  Security policies, administrator gate details, and database connections.
+                </p>
+              </div>
+
+              <LayerCard className="p-6 ring ring-kumo-line">
+                <div className="grid gap-4">
+                  <div className="flex items-start justify-between border-b border-kumo-line pb-3">
+                    <div>
+                      <div className="font-medium text-kumo-default">Admin PIN Protection</div>
+                      <div className="text-xs text-kumo-subtle">
+                        Admin route is hidden with no public links and requires PIN code 030347.
+                      </div>
+                    </div>
+                    <Badge variant="success">Secured</Badge>
+                  </div>
+
+                  <div className="flex items-start justify-between border-b border-kumo-line pb-3">
+                    <div>
+                      <div className="font-medium text-kumo-default">Session JWT & Cookies</div>
+                      <div className="text-xs text-kumo-subtle">
+                        Sessions are signed with JOSE (HS256) and set with HttpOnly flags.
+                      </div>
+                    </div>
+                    <Badge variant="neutral">Active</Badge>
+                  </div>
+
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="font-medium text-kumo-default">Database Dialect</div>
+                      <div className="text-xs text-kumo-subtle">
+                        PostgreSQL 18 via postgres-js driver and Drizzle schema migrations.
+                      </div>
+                    </div>
+                    <Badge variant="neutral">Postgres</Badge>
+                  </div>
                 </div>
-              </form>
-            </LayerCard>
-          </div>
-        )}
-      </main>
+              </LayerCard>
+            </div>
+          )}
+        </main>
+      </div>
     </div>
   );
 }

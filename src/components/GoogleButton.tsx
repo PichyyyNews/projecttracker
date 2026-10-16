@@ -13,18 +13,18 @@ export const GoogleButton: React.FC<GoogleButtonProps> = ({
   ...props
 }) => {
   return (
-    <div className="flex w-full justify-center">
+    <div className="w-full">
       <button
         type="button"
         disabled={disabled || loading}
-        className={`flex w-full max-w-[320px] items-center justify-center gap-3 rounded-lg border border-black/25 bg-white px-5 py-2 text-center text-sm font-bold uppercase leading-5 text-[rgb(65,63,63)] align-middle shadow-sm transition-all duration-500 ease-in-out hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none ${className}`}
+        className={`group flex w-full items-center justify-center gap-2.5 rounded border border-kumo-line bg-kumo-base py-2 px-4 text-center text-xs font-semibold text-kumo-default shadow-none transition-none hover:bg-kumo-tint active:bg-kumo-recessed disabled:opacity-50 disabled:pointer-events-none ${className}`}
         {...props}
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
           preserveAspectRatio="xMidYMid"
           viewBox="0 0 256 262"
-          className="h-6 w-6 shrink-0"
+          className="h-4 w-4 shrink-0"
         >
           <path
             fill="#4285F4"
@@ -43,7 +43,9 @@ export const GoogleButton: React.FC<GoogleButtonProps> = ({
             d="M130.55 50.479c24.514 0 41.05 10.589 50.479 19.438l36.844-35.974C195.245 12.91 165.798 0 130.55 0 79.49 0 35.393 29.301 13.925 71.947l42.211 32.783c10.59-31.477 39.891-54.251 74.414-54.251"
           />
         </svg>
-        <span>{loading ? "Connecting..." : "Continue with Google"}</span>
+        <span className="tracking-normal font-medium text-xs text-kumo-default">
+          {loading ? "Connecting..." : "Continue with Google"}
+        </span>
       </button>
     </div>
   );
