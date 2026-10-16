@@ -219,18 +219,15 @@ export default function ProfilePage() {
       <AppNavbar currentUser={currentUser} subtitle="Profile Settings" />
 
       {/* Main Content Area */}
-      <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
-        <div className="mb-6 flex flex-col gap-1">
-          <h1 className="text-xl font-semibold text-kumo-default">Profile settings</h1>
-          <p className="text-xs text-kumo-subtle">
-            Manage your personal academic information, class group, and contact details.
-          </p>
+      <main className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+        <div className="mb-8">
+          <h1 className="text-xl font-semibold text-kumo-default">Profile</h1>
         </div>
 
         {saveSuccess && (
           <div className="mb-6 flex items-center gap-2 rounded border border-green-200 bg-green-50 p-3 text-xs text-green-700 dark:border-green-900/40 dark:bg-green-950/20 dark:text-green-400">
             <CheckCircle weight="thin" size={16} />
-            <span>Profile and MinIO photo updated successfully!</span>
+            <span>Profile updated successfully</span>
           </div>
         )}
 
@@ -241,10 +238,10 @@ export default function ProfilePage() {
           </div>
         )}
 
-        <form onSubmit={handleSaveProfile} className="grid gap-6">
+        <form onSubmit={handleSaveProfile} className="space-y-8">
           {/* Section 1: Avatar with MinIO File Upload */}
-          <LayerCard className="p-6 ring ring-kumo-line rounded-lg bg-kumo-base">
-            <div className="mb-5 flex flex-col gap-5 sm:flex-row sm:items-center">
+          <LayerCard className="p-6 ring ring-kumo-line rounded-lg bg-kumo-base space-y-6">
+            <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
               <div className="relative group">
                 <UserAvatar
                   src={formData.avatarUrl || null}
@@ -267,12 +264,7 @@ export default function ProfilePage() {
                 </button>
               </div>
 
-              <div className="grid gap-1.5">
-                <h2 className="text-sm font-semibold text-kumo-default">Profile picture (รูปภาพโปรไฟล์)</h2>
-                <p className="text-xs text-kumo-subtle">
-                  Upload directly to MinIO Object Storage (PNG, JPG, WebP)
-                </p>
-
+              <div className="space-y-2">
                 <input
                   type="file"
                   ref={fileInputRef}
@@ -290,7 +282,7 @@ export default function ProfilePage() {
                     onClick={() => fileInputRef.current?.click()}
                   >
                     <Camera weight="thin" size={16} className="mr-1.5" />
-                    <span>{uploading ? "Uploading to MinIO..." : "Upload photo"}</span>
+                    <span>{uploading ? "Uploading..." : "Upload photo"}</span>
                   </Button>
 
                   {formData.avatarUrl && (
@@ -307,9 +299,9 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="grid gap-1">
-                <label className="text-xs font-medium text-kumo-default">Full name (ชื่อ-สกุล)</label>
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+              <div className="grid gap-1.5">
+                <label className="text-xs font-medium text-kumo-default">Full name</label>
                 <div className="relative">
                   <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-2.5 text-kumo-subtle">
                     <User weight="thin" size={15} />
@@ -325,8 +317,8 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              <div className="grid gap-1">
-                <label className="text-xs font-medium text-kumo-default">Email address (อีเมล)</label>
+              <div className="grid gap-1.5">
+                <label className="text-xs font-medium text-kumo-default">Email</label>
                 <input
                   type="email"
                   disabled
@@ -335,10 +327,8 @@ export default function ProfilePage() {
                 />
               </div>
 
-              <div className="grid gap-1">
-                <label className="text-xs font-medium text-kumo-default">
-                  Student ID (รหัสนักศึกษา)
-                </label>
+              <div className="grid gap-1.5">
+                <label className="text-xs font-medium text-kumo-default">Student ID</label>
                 <div className="relative">
                   <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-2.5 text-kumo-subtle">
                     <IdentificationCard weight="thin" size={15} />
@@ -353,10 +343,8 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              <div className="grid gap-1">
-                <label className="text-xs font-medium text-kumo-default">
-                  Phone number (เบอร์โทรศัพท์)
-                </label>
+              <div className="grid gap-1.5">
+                <label className="text-xs font-medium text-kumo-default">Phone</label>
                 <div className="relative">
                   <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-2.5 text-kumo-subtle">
                     <Phone weight="thin" size={15} />
@@ -374,19 +362,12 @@ export default function ProfilePage() {
           </LayerCard>
 
           {/* Section 2: Academic Department & Dynamic Class Groups Dropdowns */}
-          <LayerCard className="p-6 ring ring-kumo-line rounded-lg bg-kumo-base">
-            <div className="mb-4 grid gap-1">
-              <h2 className="text-sm font-semibold text-kumo-default">
-                Academic & class group (แผนก สาขา และกลุ่มเรียน)
-              </h2>
-              <p className="text-xs text-kumo-subtle">
-                Dynamic options managed directly by the college administrator.
-              </p>
-            </div>
+          <LayerCard className="p-6 ring ring-kumo-line rounded-lg bg-kumo-base space-y-5">
+            <h2 className="text-sm font-semibold text-kumo-default">Academic details</h2>
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="grid gap-1">
-                <label className="text-xs font-medium text-kumo-default">Department (แผนกวิชา)</label>
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+              <div className="grid gap-1.5">
+                <label className="text-xs font-medium text-kumo-default">Department</label>
                 <select
                   value={formData.department}
                   onChange={(e) => setFormData({ ...formData, department: e.target.value })}
@@ -401,10 +382,8 @@ export default function ProfilePage() {
               </div>
 
               {/* Dynamic Academic Dropdown */}
-              <div className="grid gap-1">
-                <label className="text-xs font-medium text-kumo-default">
-                  Level, Group & Major (ชั้นปี / กลุ่ม / สาขา)
-                </label>
+              <div className="grid gap-1.5">
+                <label className="text-xs font-medium text-kumo-default">Class & Group</label>
                 <select
                   value={formData.selectedAcademicIndex}
                   onChange={(e) =>
@@ -420,27 +399,6 @@ export default function ProfilePage() {
                 </select>
               </div>
             </div>
-
-            {/* Quick Preview Card */}
-            {selectedAcademic && (
-              <div className="mt-5 rounded border border-kumo-line bg-kumo-tint p-3 text-xs">
-                <div className="font-semibold text-kumo-default mb-1">Current selection summary:</div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-kumo-subtle">
-                  <div>
-                    <span className="font-medium text-kumo-default">ชั้นปี:</span>{" "}
-                    {selectedAcademic.yearLevel}
-                  </div>
-                  <div>
-                    <span className="font-medium text-kumo-default">กลุ่มเรียน:</span> กลุ่ม{" "}
-                    {selectedAcademic.studyGroup}
-                  </div>
-                  <div>
-                    <span className="font-medium text-kumo-default">สาขาวิชา:</span>{" "}
-                    {selectedAcademic.major}
-                  </div>
-                </div>
-              </div>
-            )}
           </LayerCard>
 
           {/* Form Actions */}
