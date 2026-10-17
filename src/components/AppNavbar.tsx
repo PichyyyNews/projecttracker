@@ -188,6 +188,21 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                   <span>Profile</span>
                 </Link>
 
+                {/* Advisor Portal Link for Advisors / Instructors / Admins */}
+                {currentUser && ["advisor", "instructor", "admin"].includes(currentUser.role) && (
+                  <Link
+                    href="/advisor"
+                    onClick={() => setIsDropdownOpen(false)}
+                    className="flex w-full items-center justify-between px-3 py-2 text-xs font-medium text-kumo-default hover:bg-kumo-tint transition-none"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Kanban weight="thin" size={16} className="text-kumo-brand" />
+                      <span className="font-semibold text-kumo-brand">Advisor Portal</span>
+                    </div>
+                    <Badge variant="primary">Advising</Badge>
+                  </Link>
+                )}
+
                 <Link
                   href="/mail"
                   onClick={() => setIsDropdownOpen(false)}

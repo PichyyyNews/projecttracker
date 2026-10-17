@@ -87,6 +87,26 @@ export const messages = pgTable("messages", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const milestones = pgTable("milestones", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").references(() => projects.id, { onDelete: "cascade" }).notNull(),
+  stage: integer("stage").notNull(), // 25, 50, 75, 100
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  goalScope: text("goal_scope"),
+  deliverableLinks: text("deliverable_links"), // JSON array of string links
+  deliverableFiles: text("deliverable_files"), // JSON array of file paths / urls
+  submissionNote: text("submission_note"),
+  status: varchar("status", { length: 50 }).notNull().default("locked"), // locked, in_progress, pending_inspection, needs_revision, approved
+  feedbackNotes: text("feedback_notes"),
+  qrToken: varchar("qr_token", { length: 255 }),
+  submittedAt: timestamp("submitted_at"),
+  approvedAt: timestamp("approved_at"),
+  approvedBy: integer("approved_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Department = typeof departments.$inferSelect;
@@ -103,3 +123,5 @@ export type Task = typeof tasks.$inferSelect;
 export type NewTask = typeof tasks.$inferInsert;
 export type Message = typeof messages.$inferSelect;
 export type NewMessage = typeof messages.$inferInsert;
+export type Milestone = typeof milestones.$inferSelect;
+export type NewMilestone = typeof milestones.$inferInsert;

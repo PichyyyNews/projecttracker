@@ -29,6 +29,7 @@ import {
 import UserAvatar from "@/components/UserAvatar";
 import AppNavbar from "@/components/AppNavbar";
 import { USER_ROLES, UserRole } from "@/lib/roles";
+import { MilestoneTimeline, MilestoneItem } from "@/components/MilestoneTimeline";
 
 interface UserSession {
   id: number;
@@ -88,6 +89,11 @@ export default function HomePage() {
   const [selectedMemberIds, setSelectedMemberIds] = useState<number[]>([]);
   const [selectedAdvisorId, setSelectedAdvisorId] = useState<number | null>(null);
   const [createLoading, setCreateLoading] = useState(false);
+
+  // Milestone Detail View State
+  const [selectedTrackProject, setSelectedTrackProject] = useState<ProjectItem | null>(null);
+  const [projectMilestones, setProjectMilestones] = useState<MilestoneItem[]>([]);
+  const [loadingMilestones, setLoadingMilestones] = useState(false);
 
   // Search & Filter within Create Modal
   const [memberSearch, setMemberSearch] = useState("");
@@ -178,6 +184,26 @@ export default function HomePage() {
     }
   };
 
+  const fetchProjectMilestones = async (projectId: number) => {
+    try {
+      setLoadingMilestones(true);
+      const res = await fetch(`/api/milestones?projectId=${projectId}`);
+      const data = await res.json();
+      if (data.success) {
+        setProjectMilestones(data.data || []);
+      }
+    } catch (err: any) {
+      showToast(err.message || "Failed to load project milestones", "error");
+    } finally {
+      setLoadingMilestones(false);
+    }
+  };
+
+  const handleOpenProjectTrack = (project: ProjectItem) => {
+    setSelectedTrackProject(project);
+    fetchProjectMilestones(project.id);
+  };
+
   const handleCreateProject = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!projectName.trim() || !subjectName.trim()) return;
@@ -239,8 +265,76 @@ export default function HomePage() {
 
       {/* Main Content Area */}
       <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-8 sm:px-6">
-        {/* Projects Grid or Empty State */}
-        {loadingProjects ? (
+        {/* Projects Grid or Empty State or Project Milestone Track */}
+        {selectedTrackProject ? (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => setSelectedTrackProject(null)}
+                className="flex items-center gap-1.5 text-xs font-medium text-kumo-subtle hover:text-kumo-default"
+              >
+                <ArrowRight weight="bold" size={14} className="rotate-180" />
+                <span>Back to projects overview</span>
+              </button>
+              <Badge variant={selectedTrackProject.status === "completed" ? "primary" : "secondary"}>
+                Status: {selectedTrackProject.status}
+              </Badge>
+            </div>
+
+            <LayerCard className="p-6 ring ring-kumo-line rounded-xl bg-kumo-base space-y-4">
+              <div className="border-b border-kumo-line pb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="rounded bg-kumo-brand/10 px-2 py-0.5 text-[10px] font-medium text-kumo-brand">
+                      {selectedTrackProject.subjectName}
+                    </span>
+                    <h2 className="text-lg font-bold text-kumo-default">{selectedTrackProject.name}</h2>
+                  </div>
+                  {selectedTrackProject.description && (
+                    <p className="mt-1 text-xs text-kumo-subtle">{selectedTrackProject.description}</p>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-kumo-subtle">Advisor:</span>
+                  {selectedTrackProject.advisor ? (
+                    <div className="flex items-center gap-1.5">
+                      <UserAvatar
+                        src={selectedTrackProject.advisor.avatarUrl}
+                        name={selectedTrackProject.advisor.name}
+                        size={22}
+                      />
+                      <span className="text-xs font-semibold text-kumo-default">
+                        {selectedTrackProject.advisor.name}
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="text-xs text-kumo-subtle italic">Unassigned</span>
+                  )}
+                </div>
+              </div>
+
+              {loadingMilestones ? (
+                <div className="flex h-40 items-center justify-center">
+                  <span className="text-xs text-kumo-subtle">Loading milestone tracking...</span>
+                </div>
+              ) : (
+                <div className="pt-2">
+                  <MilestoneTimeline
+                    milestones={projectMilestones}
+                    isAdvisorOrAdmin={
+                      currentUser?.role === "advisor" ||
+                      currentUser?.role === "instructor" ||
+                      currentUser?.role === "admin"
+                    }
+                    onRefresh={() => fetchProjectMilestones(selectedTrackProject.id)}
+                  />
+                </div>
+              )}
+            </LayerCard>
+          </div>
+        ) : loadingProjects ? (
           <div className="flex h-64 items-center justify-center">
             <span className="text-xs text-kumo-subtle">Loading workspace projects...</span>
           </div>
@@ -366,9 +460,14 @@ export default function HomePage() {
 
                 <div className="mt-5 pt-3 border-t border-kumo-line flex items-center justify-between text-xs text-kumo-subtle">
                   <span>Created {new Date(project.createdAt).toLocaleDateString()}</span>
-                  <span className="text-kumo-brand font-medium flex items-center gap-1 hover:underline cursor-pointer">
-                    View project <ArrowRight weight="thin" size={12} />
-                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleOpenProjectTrack(project)}
+                    className="text-kumo-brand font-medium flex items-center gap-1 hover:underline cursor-pointer"
+                  >
+                    <span>View project track</span>
+                    <ArrowRight weight="thin" size={12} />
+                  </button>
                 </div>
               </LayerCard>
             ))}
