@@ -47,6 +47,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: "Invitation not found or you are not a member of this project" }, { status: 404 });
     }
 
+    // If an advisor rejects, remove them from projects.advisorId
+    if (updatedMember.role === "advisor" && action === "reject") {
+      await db
+        .update(projects)
+        .set({ advisorId: null })
+        .where(eq(projects.id, projectId));
+    }
+
     // Get project details to send feedback message back to creator
     const [project] = await db.select().from(projects).where(eq(projects.id, projectId));
     if (project && project.creatorId) {

@@ -19,26 +19,30 @@ export async function GET(req: Request) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
 
-    // Find projects where user is creator, member, or advisor
-    // 1. Find project IDs where user is member
-    const memberships = await db
+    // Find projects where user is creator or an accepted member/advisor
+    // 1. Find project IDs where user is accepted member
+    const acceptedMemberships = await db
       .select({ projectId: projectMembers.projectId })
       .from(projectMembers)
-      .where(eq(projectMembers.userId, payload.id));
+      .where(
+        and(
+          eq(projectMembers.userId, payload.id),
+          eq(projectMembers.status, "accepted")
+        )
+      );
 
-    const memberProjectIds = memberships.map((m) => m.projectId);
+    const acceptedProjectIds = acceptedMemberships.map((m) => m.projectId);
 
     // 2. Fetch projects
     let userProjects: any[] = [];
-    if (memberProjectIds.length > 0) {
+    if (acceptedProjectIds.length > 0) {
       userProjects = await db
         .select()
         .from(projects)
         .where(
           or(
             eq(projects.creatorId, payload.id),
-            eq(projects.advisorId, payload.id),
-            inArray(projects.id, memberProjectIds)
+            inArray(projects.id, acceptedProjectIds)
           )
         )
         .orderBy(desc(projects.createdAt));
@@ -46,12 +50,7 @@ export async function GET(req: Request) {
       userProjects = await db
         .select()
         .from(projects)
-        .where(
-          or(
-            eq(projects.creatorId, payload.id),
-            eq(projects.advisorId, payload.id)
-          )
-        )
+        .where(eq(projects.creatorId, payload.id))
         .orderBy(desc(projects.createdAt));
     }
 

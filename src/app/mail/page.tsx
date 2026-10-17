@@ -139,7 +139,13 @@ export default function MailPage() {
         if (msgData.success) {
           setMessagesList(msgData.data);
           if (msgData.data.length > 0) {
-            setSelectedMessage(msgData.data[0]);
+            setSelectedMessage((prev) => {
+              if (prev) {
+                const refreshed = msgData.data.find((m: MessageItem) => m.id === prev.id);
+                if (refreshed) return refreshed;
+              }
+              return msgData.data[0];
+            });
           } else {
             setSelectedMessage(null);
           }
