@@ -48,7 +48,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
           <img
             src="/logo.svg"
             alt="Project Tracker Logo"
-            className="h-9 w-9 object-contain shrink-0"
+            className="h-16 w-16 object-contain shrink-0"
           />
           <div className="flex flex-col">
             <span className="font-semibold text-kumo-default">Project Tracker</span>
