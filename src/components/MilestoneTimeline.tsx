@@ -17,6 +17,7 @@ import {
   ChatCircleDots,
 } from "@phosphor-icons/react";
 import { Button, LayerCard, Badge } from "@cloudflare/kumo";
+import UserAvatar from "@/components/UserAvatar";
 
 export interface MilestoneItem {
   id: number;
@@ -44,6 +45,22 @@ export interface MilestoneItem {
 interface MilestoneTimelineProps {
   milestones: MilestoneItem[];
   isAdvisorOrAdmin?: boolean;
+  projectInfo?: {
+    name: string;
+    subjectName: string;
+    description?: string | null;
+    advisor?: {
+      name: string;
+      avatarUrl?: string | null;
+    } | null;
+    members?: {
+      id: number;
+      user?: {
+        name: string;
+        avatarUrl?: string | null;
+      };
+    }[];
+  };
   onRefresh?: () => void;
   onOpenEvaluationModal?: (m: MilestoneItem) => void;
 }
@@ -51,6 +68,7 @@ interface MilestoneTimelineProps {
 export const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({
   milestones,
   isAdvisorOrAdmin = false,
+  projectInfo,
   onRefresh,
   onOpenEvaluationModal,
 }) => {
@@ -163,8 +181,55 @@ export const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({
 
   return (
     <div className="flex flex-col gap-6">
-      {/* 1. HORIZONTAL TIMELINE (Left to Right) */}
+      {/* 1. HORIZONTAL TIMELINE & PROJECT HEADER IN ONE CARD */}
       <LayerCard className="p-5 ring ring-kumo-line rounded-xl bg-kumo-base shadow-xs overflow-x-auto">
+        {projectInfo && (
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-kumo-line pb-4 mb-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="rounded bg-kumo-brand/10 px-2 py-0.5 text-[10px] font-medium text-kumo-brand">
+                  {projectInfo.subjectName}
+                </span>
+                <h1 className="text-base font-bold text-kumo-default">{projectInfo.name}</h1>
+              </div>
+              {projectInfo.description && (
+                <p className="mt-0.5 text-xs text-kumo-subtle">{projectInfo.description}</p>
+              )}
+            </div>
+
+            <div className="flex items-center gap-4 text-xs">
+              {projectInfo.advisor && (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-kumo-subtle">Advisor:</span>
+                  <UserAvatar
+                    src={projectInfo.advisor.avatarUrl}
+                    name={projectInfo.advisor.name}
+                    size={20}
+                  />
+                  <span className="font-semibold text-kumo-default">
+                    {projectInfo.advisor.name}
+                  </span>
+                </div>
+              )}
+              {projectInfo.members && projectInfo.members.length > 0 && (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-kumo-subtle">Members:</span>
+                  <div className="flex items-center -space-x-1.5">
+                    {projectInfo.members.map((m) => (
+                      <UserAvatar
+                        key={m.id}
+                        src={m.user?.avatarUrl}
+                        name={m.user?.name}
+                        size={20}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="text-sm font-semibold text-kumo-default">Project milestone timeline</h3>
