@@ -20,6 +20,9 @@ import {
   ChatCircleText,
   CaretDown,
   Check,
+  Tray,
+  PaperPlaneTilt,
+  ClockCountdown,
 } from "@phosphor-icons/react";
 import UserAvatar from "@/components/UserAvatar";
 import AppNavbar from "@/components/AppNavbar";
@@ -45,6 +48,12 @@ interface MessageItem {
   createdAt: string;
   sender: MessageUser;
   receiver: MessageUser | null;
+  invitationInfo?: {
+    projectId: number;
+    status: string; // pending, accepted, rejected
+    role: string;
+    respondedAt?: string | null;
+  } | null;
 }
 
 export default function MailPage() {
@@ -57,6 +66,7 @@ export default function MailPage() {
 
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [activeTab, setActiveTab] = useState<"inbox" | "sent">("inbox");
   const [activeFilter, setActiveFilter] = useState<"all" | "system" | "direct" | "tickets">("all");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -87,8 +97,8 @@ export default function MailPage() {
   };
 
   useEffect(() => {
-    loadMailData();
-  }, []);
+    loadMailData(activeTab);
+  }, [activeTab]);
 
   // Close recipient dropdown on outside click
   useEffect(() => {
@@ -108,11 +118,12 @@ export default function MailPage() {
     };
   }, [isRecipientMenuOpen]);
 
-  const loadMailData = async () => {
+  const loadMailData = async (tab: "inbox" | "sent" = activeTab) => {
+    setLoading(true);
     try {
       const [meRes, msgRes, usersRes] = await Promise.all([
         fetch("/api/auth/me"),
-        fetch("/api/messages"),
+        fetch(`/api/messages?tab=${tab}`),
         fetch("/api/users"),
       ]);
 
@@ -127,8 +138,10 @@ export default function MailPage() {
         const msgData = await msgRes.json();
         if (msgData.success) {
           setMessagesList(msgData.data);
-          if (msgData.data.length > 0 && !selectedMessage) {
+          if (msgData.data.length > 0) {
             setSelectedMessage(msgData.data[0]);
+          } else {
+            setSelectedMessage(null);
           }
         }
       }
@@ -201,7 +214,7 @@ export default function MailPage() {
           ? "Support ticket sent to college admin"
           : "Message sent successfully"
       );
-      loadMailData();
+      loadMailData(activeTab);
     } catch (err: any) {
       showToast(err.message || "Error sending message", "error");
     } finally {
@@ -248,7 +261,7 @@ export default function MailPage() {
           ? "Ticket response sent to admin console"
           : "Reply sent successfully"
       );
-      loadMailData();
+      loadMailData(activeTab);
     } catch (err: any) {
       showToast(err.message || "Error sending reply", "error");
     } finally {
@@ -265,8 +278,9 @@ export default function MailPage() {
       const q = searchQuery.toLowerCase();
       const matchSubject = m.subject.toLowerCase().includes(q);
       const matchContent = m.content.toLowerCase().includes(q);
-      const matchSender = m.sender?.name.toLowerCase().includes(q);
-      return matchSubject || matchContent || matchSender;
+      const matchSender = m.sender?.name?.toLowerCase().includes(q);
+      const matchReceiver = m.receiver?.name?.toLowerCase().includes(q);
+      return matchSubject || matchContent || matchSender || matchReceiver;
     }
     return true;
   });
@@ -293,8 +307,36 @@ export default function MailPage() {
               </Button>
             </div>
 
+            {/* Mail Box Tabs: Inbox vs Sent */}
+            <div className="grid grid-cols-2 border-b border-kumo-line bg-kumo-control/20 text-xs">
+              <button
+                type="button"
+                onClick={() => setActiveTab("inbox")}
+                className={`flex items-center justify-center gap-1.5 py-2 font-medium transition-colors border-b-2 ${
+                  activeTab === "inbox"
+                    ? "border-kumo-brand bg-kumo-base text-kumo-brand"
+                    : "border-transparent text-kumo-subtle hover:text-kumo-default"
+                }`}
+              >
+                <Tray weight="thin" size={15} />
+                <span>Inbox (กล่องเข้า)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("sent")}
+                className={`flex items-center justify-center gap-1.5 py-2 font-medium transition-colors border-b-2 ${
+                  activeTab === "sent"
+                    ? "border-kumo-brand bg-kumo-base text-kumo-brand"
+                    : "border-transparent text-kumo-subtle hover:text-kumo-default"
+                }`}
+              >
+                <PaperPlaneTilt weight="thin" size={15} />
+                <span>Sent (ที่ส่งแล้ว)</span>
+              </button>
+            </div>
+
             {/* Filter Tabs */}
-            <div className="flex border-b border-kumo-line bg-kumo-control/30 px-3 py-1.5 text-xs">
+            <div className="flex border-b border-kumo-line bg-kumo-control/40 px-3 py-1.5 text-xs">
               <button
                 type="button"
                 onClick={() => setActiveFilter("all")}
@@ -351,7 +393,7 @@ export default function MailPage() {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search mail..."
+                  placeholder={activeTab === "sent" ? "Search sent mail..." : "Search inbox..."}
                   className="w-full rounded-md border border-kumo-line bg-kumo-control py-1.5 pl-8 pr-2.5 text-xs text-kumo-default placeholder:text-kumo-subtle focus:border-kumo-brand focus:outline-none"
                 />
               </div>
@@ -362,12 +404,16 @@ export default function MailPage() {
               {loading ? (
                 <div className="p-8 text-center text-xs text-kumo-subtle">Loading messages...</div>
               ) : filteredMessages.length === 0 ? (
-                <div className="p-8 text-center text-xs text-kumo-subtle">No messages found</div>
+                <div className="p-8 text-center text-xs text-kumo-subtle">
+                  {activeTab === "sent" ? "No sent messages found" : "No messages found"}
+                </div>
               ) : (
                 filteredMessages.map((m) => {
                   const isSelected = selectedMessage?.id === m.id;
                   const isSystem = m.type === "system";
                   const isTicket = m.type === "ticket";
+                  const isSentView = activeTab === "sent";
+                  const counterpart = isSentView ? m.receiver : m.sender;
 
                   return (
                     <div
@@ -391,14 +437,25 @@ export default function MailPage() {
                             </div>
                           ) : (
                             <UserAvatar
-                              src={m.sender?.avatarUrl || null}
-                              name={m.sender?.name}
+                              src={counterpart?.avatarUrl || null}
+                              name={counterpart?.name}
                               size={28}
                             />
                           )}
-                          <span className="truncate text-xs font-semibold text-kumo-default">
-                            {isSystem ? "System Automated" : m.sender?.name}
-                          </span>
+                          <div className="min-w-0">
+                            <span className="truncate text-xs font-semibold text-kumo-default block">
+                              {isSentView ? (
+                                <>
+                                  <span className="text-[10px] font-normal text-kumo-subtle mr-1">To:</span>
+                                  {m.receiver ? m.receiver.name : "College Administration"}
+                                </>
+                              ) : isSystem ? (
+                                "System Automated"
+                              ) : (
+                                m.sender?.name
+                              )}
+                            </span>
+                          </div>
                         </div>
 
                         <span className="text-[10px] text-kumo-subtle shrink-0">
@@ -406,12 +463,32 @@ export default function MailPage() {
                         </span>
                       </div>
 
-                      <div className="mt-1.5 truncate text-xs font-medium text-kumo-default">
-                        {m.subject}
+                      <div className="mt-1.5 flex items-center justify-between gap-2">
+                        <div className="truncate text-xs font-medium text-kumo-default">
+                          {m.subject}
+                        </div>
+                        {/* Invitation Status Tag in List */}
+                        {m.invitationInfo && (
+                          <span
+                            className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium ${
+                              m.invitationInfo.status === "accepted"
+                                ? "bg-green-500/10 text-green-600 dark:text-green-400"
+                                : m.invitationInfo.status === "rejected"
+                                ? "bg-red-500/10 text-red-600 dark:text-red-400"
+                                : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                            }`}
+                          >
+                            {m.invitationInfo.status === "accepted"
+                              ? "Accepted"
+                              : m.invitationInfo.status === "rejected"
+                              ? "Declined"
+                              : "Pending"}
+                          </span>
+                        )}
                       </div>
 
                       <div className="mt-1 line-clamp-2 text-xs text-kumo-subtle">
-                        {m.content}
+                        {m.content.replace(/\[ACCEPT_PROJECT:\d+\]\s*\[REJECT_PROJECT:\d+\]/g, "")}
                       </div>
                     </div>
                   );
@@ -437,8 +514,8 @@ export default function MailPage() {
                       </div>
                     ) : (
                       <UserAvatar
-                        src={selectedMessage.sender?.avatarUrl || null}
-                        name={selectedMessage.sender?.name}
+                        src={(activeTab === "sent" ? selectedMessage.receiver?.avatarUrl : selectedMessage.sender?.avatarUrl) || null}
+                        name={activeTab === "sent" ? selectedMessage.receiver?.name : selectedMessage.sender?.name}
                         size={44}
                         className="rounded-full ring-1 ring-kumo-line"
                       />
@@ -457,7 +534,16 @@ export default function MailPage() {
                         )}
                       </div>
                       <span className="text-xs text-kumo-subtle">
-                        From: <span className="text-kumo-default">{selectedMessage.sender?.name}</span> ({selectedMessage.sender?.email})
+                        {activeTab === "sent" ? (
+                          <>
+                            To: <span className="text-kumo-default">{selectedMessage.receiver?.name || "College Administration"}</span>
+                            {selectedMessage.receiver?.email && ` (${selectedMessage.receiver?.email})`}
+                          </>
+                        ) : (
+                          <>
+                            From: <span className="text-kumo-default">{selectedMessage.sender?.name}</span> ({selectedMessage.sender?.email})
+                          </>
+                        )}
                       </span>
                     </div>
                   </div>
@@ -472,91 +558,154 @@ export default function MailPage() {
 
                 {/* Message Body */}
                 <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                  {/* Sender View: Invitation Status Tracker */}
+                  {selectedMessage.senderId === currentUser?.id && selectedMessage.invitationInfo && (
+                    <div
+                      className={`rounded-lg border p-4 text-xs ${
+                        selectedMessage.invitationInfo.status === "accepted"
+                          ? "border-green-500/30 bg-green-500/5 text-green-800 dark:text-green-300"
+                          : selectedMessage.invitationInfo.status === "rejected"
+                          ? "border-red-500/30 bg-red-500/5 text-red-800 dark:text-red-300"
+                          : "border-amber-500/30 bg-amber-500/5 text-amber-800 dark:text-amber-300"
+                      }`}
+                    >
+                      <div className="font-semibold mb-1 flex items-center gap-2">
+                        {selectedMessage.invitationInfo.status === "accepted" ? (
+                          <CheckCircle weight="fill" size={16} className="text-green-600 dark:text-green-400" />
+                        ) : selectedMessage.invitationInfo.status === "rejected" ? (
+                          <WarningCircle weight="fill" size={16} className="text-red-600 dark:text-red-400" />
+                        ) : (
+                          <ClockCountdown weight="thin" size={16} className="text-amber-600 dark:text-amber-400" />
+                        )}
+                        <span>
+                          {selectedMessage.invitationInfo.status === "accepted"
+                            ? "คำเชิญได้รับการตอบรับแล้ว (Accepted)"
+                            : selectedMessage.invitationInfo.status === "rejected"
+                            ? "คำเชิญถูกปฏิเสธ (Declined)"
+                            : "รอการตอบรับจากผู้รับ (Pending Response)"}
+                        </span>
+                      </div>
+                      <p className="opacity-90 leading-relaxed">
+                        {selectedMessage.invitationInfo.status === "accepted"
+                          ? `${selectedMessage.receiver?.name || "ผู้รับ"} ได้ยอมรับเข้าร่วมเป็น ${selectedMessage.invitationInfo.role} ในโปรเจกต์นี้แล้ว`
+                          : selectedMessage.invitationInfo.status === "rejected"
+                          ? `${selectedMessage.receiver?.name || "ผู้รับ"} ได้ปฏิเสธคำเชิญนี้`
+                          : `คำเชิญได้ส่งไปยัง ${selectedMessage.receiver?.name || "ผู้รับ"} เรียบร้อยแล้ว กำลังรอให้กดยืนยันหรือปฏิเสธ`}
+                      </p>
+                    </div>
+                  )}
+
                   <div className="rounded-lg border border-kumo-line bg-kumo-control/30 p-5 text-xs text-kumo-default leading-relaxed whitespace-pre-wrap">
                     {selectedMessage.content.replace(/\[ACCEPT_PROJECT:\d+\]\s*\[REJECT_PROJECT:\d+\]/g, "").trim()}
                   </div>
 
-                  {/* Interactive Project Invitation Banner if invitation detected */}
-                  {selectedMessage.content.includes("[ACCEPT_PROJECT:") && (
-                    (() => {
-                      const match = selectedMessage.content.match(/\[ACCEPT_PROJECT:(\d+)\]/);
-                      const invProjectId = match ? parseInt(match[1], 10) : null;
-                      if (!invProjectId) return null;
+                  {/* Recipient View: Interactive Project Invitation Banner if invitation detected and pending */}
+                  {selectedMessage.receiverId === currentUser?.id &&
+                    selectedMessage.content.includes("[ACCEPT_PROJECT:") && (
+                      (() => {
+                        const match = selectedMessage.content.match(/\[ACCEPT_PROJECT:(\d+)\]/);
+                        const invProjectId = match ? parseInt(match[1], 10) : null;
+                        if (!invProjectId) return null;
 
-                      return (
-                        <div className="rounded-lg border border-kumo-brand/30 bg-kumo-brand/5 p-4 text-xs">
-                          <div className="font-semibold text-kumo-default mb-1 flex items-center gap-2">
-                            <Sparkle weight="thin" size={16} className="text-kumo-brand" />
-                            <span>Action Required: Project Invitation Response</span>
-                          </div>
-                          <p className="text-kumo-subtle mb-4">
-                            You have been invited to collaborate on this project. Please confirm whether you accept or decline.
-                          </p>
-                          <div className="flex items-center gap-2.5">
-                            <Button
-                              variant="primary"
-                              size="sm"
-                              disabled={sending}
-                              onClick={async () => {
-                                setSending(true);
-                                try {
-                                  const res = await fetch("/api/projects/respond", {
-                                    method: "POST",
-                                    headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify({ projectId: invProjectId, action: "accept" }),
-                                  });
-                                  const d = await res.json();
-                                  if (d.success) {
-                                    showToast("Project invitation accepted successfully!");
-                                    loadMailData();
-                                  } else {
-                                    showToast(d.error || "Failed to accept", "error");
-                                  }
-                                } catch (e: any) {
-                                  showToast(e.message || "Error", "error");
-                                } finally {
-                                  setSending(false);
-                                }
-                              }}
-                            >
-                              <Check weight="bold" size={14} className="mr-1.5" />
-                              <span>Accept Invitation</span>
-                            </Button>
+                        const isAlreadyResponded =
+                          selectedMessage.invitationInfo?.status &&
+                          selectedMessage.invitationInfo.status !== "pending";
 
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              disabled={sending}
-                              onClick={async () => {
-                                setSending(true);
-                                try {
-                                  const res = await fetch("/api/projects/respond", {
-                                    method: "POST",
-                                    headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify({ projectId: invProjectId, action: "reject" }),
-                                  });
-                                  const d = await res.json();
-                                  if (d.success) {
-                                    showToast("Project invitation declined.");
-                                    loadMailData();
-                                  } else {
-                                    showToast(d.error || "Failed to decline", "error");
-                                  }
-                                } catch (e: any) {
-                                  showToast(e.message || "Error", "error");
-                                } finally {
-                                  setSending(false);
-                                }
-                              }}
+                        if (isAlreadyResponded) {
+                          return (
+                            <div
+                              className={`rounded-lg border p-4 text-xs ${
+                                selectedMessage.invitationInfo?.status === "accepted"
+                                  ? "border-green-500/30 bg-green-500/5 text-green-800 dark:text-green-300"
+                                  : "border-red-500/30 bg-red-500/5 text-red-800 dark:text-red-300"
+                              }`}
                             >
-                              <X weight="bold" size={14} className="mr-1.5 text-red-600" />
-                              <span>Decline</span>
-                            </Button>
+                              <div className="font-semibold mb-1 flex items-center gap-2">
+                                <CheckCircle weight="fill" size={16} />
+                                <span>
+                                  {selectedMessage.invitationInfo?.status === "accepted"
+                                    ? "คุณได้ตอบรับคำเชิญนี้เรียบร้อยแล้ว"
+                                    : "คุณได้ปฏิเสธคำเชิญนี้เรียบร้อยแล้ว"}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <div className="rounded-lg border border-kumo-brand/30 bg-kumo-brand/5 p-4 text-xs">
+                            <div className="font-semibold text-kumo-default mb-1 flex items-center gap-2">
+                              <Sparkle weight="thin" size={16} className="text-kumo-brand" />
+                              <span>Action Required: Project Invitation Response</span>
+                            </div>
+                            <p className="text-kumo-subtle mb-4">
+                              You have been invited to collaborate on this project. Please confirm whether you accept or decline.
+                            </p>
+                            <div className="flex items-center gap-2.5">
+                              <Button
+                                variant="primary"
+                                size="sm"
+                                disabled={sending}
+                                onClick={async () => {
+                                  setSending(true);
+                                  try {
+                                    const res = await fetch("/api/projects/respond", {
+                                      method: "POST",
+                                      headers: { "Content-Type": "application/json" },
+                                      body: JSON.stringify({ projectId: invProjectId, action: "accept" }),
+                                    });
+                                    const d = await res.json();
+                                    if (d.success) {
+                                      showToast("Project invitation accepted successfully!");
+                                      loadMailData(activeTab);
+                                    } else {
+                                      showToast(d.error || "Failed to accept", "error");
+                                    }
+                                  } catch (e: any) {
+                                    showToast(e.message || "Error", "error");
+                                  } finally {
+                                    setSending(false);
+                                  }
+                                }}
+                              >
+                                <Check weight="bold" size={14} className="mr-1.5" />
+                                <span>Accept Invitation</span>
+                              </Button>
+
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                disabled={sending}
+                                onClick={async () => {
+                                  setSending(true);
+                                  try {
+                                    const res = await fetch("/api/projects/respond", {
+                                      method: "POST",
+                                      headers: { "Content-Type": "application/json" },
+                                      body: JSON.stringify({ projectId: invProjectId, action: "reject" }),
+                                    });
+                                    const d = await res.json();
+                                    if (d.success) {
+                                      showToast("Project invitation declined.");
+                                      loadMailData(activeTab);
+                                    } else {
+                                      showToast(d.error || "Failed to decline", "error");
+                                    }
+                                  } catch (e: any) {
+                                    showToast(e.message || "Error", "error");
+                                  } finally {
+                                    setSending(false);
+                                  }
+                                }}
+                              >
+                                <X weight="bold" size={14} className="mr-1.5 text-red-600" />
+                                <span>Decline</span>
+                              </Button>
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })()
-                  )}
+                        );
+                      })()
+                    )}
 
                   {selectedMessage.type === "system" && (
                     <div className="rounded-lg border border-blue-500/20 bg-blue-50/50 dark:bg-blue-950/20 p-4 text-xs text-blue-800 dark:text-blue-300">
@@ -614,7 +763,9 @@ export default function MailPage() {
                 <ChatCircleText weight="thin" size={48} className="text-kumo-subtle mb-3" />
                 <h3 className="text-sm font-semibold text-kumo-default">No message selected</h3>
                 <p className="text-xs text-kumo-subtle mt-1 max-w-xs">
-                  Choose a message from the list or click New to compose a direct message or ticket.
+                  {activeTab === "sent"
+                    ? "Choose a sent message from the list to view invitation status and details."
+                    : "Choose a message from the list or click New to compose a direct message or ticket."}
                 </p>
               </div>
             )}

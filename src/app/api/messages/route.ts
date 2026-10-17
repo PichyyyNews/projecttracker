@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { verifySession } from "@/lib/auth";
 import { db } from "@/db";
-import { messages, users } from "@/db/schema";
+import { messages, users, projectMembers } from "@/db/schema";
 import { eq, or, desc, and, isNull } from "drizzle-orm";
 
 export async function GET(req: Request) {
@@ -20,32 +20,52 @@ export async function GET(req: Request) {
     }
 
     const url = new URL(req.url);
-    const filter = url.searchParams.get("filter") || "all"; // all, system, direct, tickets
+    const tab = url.searchParams.get("tab") || "inbox"; // inbox, sent
 
-    // Fetch inbox messages where user is receiver or system announcements
-    const userMessages = await db
-      .select({
-        id: messages.id,
-        senderId: messages.senderId,
-        receiverId: messages.receiverId,
-        subject: messages.subject,
-        content: messages.content,
-        type: messages.type,
-        status: messages.status,
-        parentId: messages.parentId,
-        createdAt: messages.createdAt,
-        updatedAt: messages.updatedAt,
-      })
-      .from(messages)
-      .where(
-        or(
-          eq(messages.receiverId, payload.id),
-          and(eq(messages.type, "system"), or(isNull(messages.receiverId), eq(messages.receiverId, payload.id)))
+    // Fetch messages based on tab
+    let userMessages;
+    if (tab === "sent") {
+      userMessages = await db
+        .select({
+          id: messages.id,
+          senderId: messages.senderId,
+          receiverId: messages.receiverId,
+          subject: messages.subject,
+          content: messages.content,
+          type: messages.type,
+          status: messages.status,
+          parentId: messages.parentId,
+          createdAt: messages.createdAt,
+          updatedAt: messages.updatedAt,
+        })
+        .from(messages)
+        .where(eq(messages.senderId, payload.id))
+        .orderBy(desc(messages.createdAt));
+    } else {
+      userMessages = await db
+        .select({
+          id: messages.id,
+          senderId: messages.senderId,
+          receiverId: messages.receiverId,
+          subject: messages.subject,
+          content: messages.content,
+          type: messages.type,
+          status: messages.status,
+          parentId: messages.parentId,
+          createdAt: messages.createdAt,
+          updatedAt: messages.updatedAt,
+        })
+        .from(messages)
+        .where(
+          or(
+            eq(messages.receiverId, payload.id),
+            and(eq(messages.type, "system"), or(isNull(messages.receiverId), eq(messages.receiverId, payload.id)))
+          )
         )
-      )
-      .orderBy(desc(messages.createdAt));
+        .orderBy(desc(messages.createdAt));
+    }
 
-    // Get all unique user IDs involved to populate sender info
+    // Get all unique user IDs involved to populate sender & receiver info
     const allUsers = await db
       .select({
         id: users.id,
@@ -59,11 +79,51 @@ export async function GET(req: Request) {
     const userMap = new Map();
     allUsers.forEach((u) => userMap.set(u.id, u));
 
+    // Check invitation statuses for messages containing [ACCEPT_PROJECT:xxx]
+    const projectMemberRecords = await db
+      .select({
+        projectId: projectMembers.projectId,
+        userId: projectMembers.userId,
+        status: projectMembers.status,
+        role: projectMembers.role,
+        respondedAt: projectMembers.respondedAt,
+      })
+      .from(projectMembers);
+
+    const memberStatusMap = new Map<string, { status: string; role: string; respondedAt: Date | null }>();
+    projectMemberRecords.forEach((pm) => {
+      memberStatusMap.set(`${pm.projectId}_${pm.userId}`, {
+        status: pm.status,
+        role: pm.role,
+        respondedAt: pm.respondedAt,
+      });
+    });
+
     const enrichedMessages = userMessages.map((msg) => {
       const sender = msg.senderId ? userMap.get(msg.senderId) : null;
       const receiver = msg.receiverId ? userMap.get(msg.receiverId) : null;
+
+      // Extract invitation info if present
+      let invitationInfo = null;
+      const match = msg.content.match(/\[ACCEPT_PROJECT:(\d+)\]/);
+      if (match) {
+        const pId = parseInt(match[1], 10);
+        // The member is receiver if sent or receiver if inbox
+        const targetUserId = msg.receiverId || payload.id;
+        const pmInfo = memberStatusMap.get(`${pId}_${targetUserId}`);
+        if (pmInfo) {
+          invitationInfo = {
+            projectId: pId,
+            status: pmInfo.status, // 'pending', 'accepted', 'rejected'
+            role: pmInfo.role,
+            respondedAt: pmInfo.respondedAt,
+          };
+        }
+      }
+
       return {
         ...msg,
+        invitationInfo,
         sender: sender
           ? { id: sender.id, name: sender.name, email: sender.email, role: sender.role, avatarUrl: sender.avatarUrl }
           : { id: 0, name: "System", email: "system@projecttracker.internal", role: "system", avatarUrl: null },
