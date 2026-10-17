@@ -262,22 +262,32 @@ export const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-kumo-line pb-4">
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-mono text-xs text-kumo-subtle">STAGE {selectedMilestone.stage}%</span>
-                <Badge
-                  variant={
+                <span className="rounded bg-kumo-control px-2 py-0.5 text-[10px] font-semibold tracking-wider text-kumo-subtle uppercase">
+                  Stage {selectedMilestone.stage}%
+                </span>
+                <span
+                  className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
                     selectedMilestone.status === "approved"
-                      ? "success"
+                      ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                       : selectedMilestone.status === "pending_inspection"
-                      ? "warning"
+                      ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
                       : selectedMilestone.status === "needs_revision"
-                      ? "destructive"
+                      ? "bg-rose-500/10 text-rose-600 dark:text-rose-400"
                       : selectedMilestone.status === "in_progress"
-                      ? "primary"
-                      : "neutral"
-                  }
+                      ? "bg-kumo-brand/10 text-kumo-brand"
+                      : "bg-kumo-control text-kumo-subtle"
+                  }`}
                 >
-                  {selectedMilestone.status.replace("_", " ")}
-                </Badge>
+                  {selectedMilestone.status === "approved"
+                    ? "Approved"
+                    : selectedMilestone.status === "pending_inspection"
+                    ? "Awaiting Inspection"
+                    : selectedMilestone.status === "needs_revision"
+                    ? "Needs Revision"
+                    : selectedMilestone.status === "in_progress"
+                    ? "In Progress"
+                    : "Locked"}
+                </span>
               </div>
               <h2 className="text-base font-semibold text-kumo-default mt-1">
                 {selectedMilestone.title}

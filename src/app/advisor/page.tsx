@@ -386,80 +386,64 @@ function AdvisorPortalContent() {
         {/* Project Detail View Mode (If a project is selected) */}
         {selectedProject ? (
           <div className="mt-8 space-y-6">
-            <div className="flex items-center justify-between">
-              <button
-                type="button"
-                onClick={() => setSelectedProject(null)}
-                className="flex items-center gap-1.5 text-xs font-medium text-kumo-subtle hover:text-kumo-default"
-              >
-                <CaretLeft weight="bold" size={14} />
-                <span>Back to project list</span>
-              </button>
-
-              <Badge
-                variant={
-                  selectedProject.currentProgress === 100
-                    ? "primary"
-                    : selectedProject.needsInspection
-                    ? "outline"
-                    : "secondary"
-                }
-              >
-                Progress: {selectedProject.currentProgress}%
-              </Badge>
-            </div>
-
-            <LayerCard className="p-6 ring ring-kumo-line rounded-xl bg-kumo-base space-y-4">
-              <div className="border-b border-kumo-line pb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            {/* Project Header Bar */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-kumo-line pb-4">
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setSelectedProject(null)}
+                  title="Back to project list"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-kumo-line bg-kumo-base text-kumo-subtle hover:text-kumo-default hover:border-kumo-brand/60 transition-colors shrink-0"
+                >
+                  <CaretLeft weight="bold" size={14} />
+                </button>
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="rounded bg-kumo-brand/10 px-2 py-0.5 text-[10px] font-medium text-kumo-brand">
                       {selectedProject.subjectName}
                     </span>
-                    <h2 className="text-lg font-bold text-kumo-default">
+                    <h1 className="text-lg font-bold text-kumo-default">
                       {selectedProject.name}
-                    </h2>
+                    </h1>
                   </div>
                   {selectedProject.description && (
-                    <p className="mt-1 text-xs text-kumo-subtle">
+                    <p className="mt-0.5 text-xs text-kumo-subtle">
                       {selectedProject.description}
                     </p>
                   )}
                 </div>
+              </div>
 
-                {/* Team Members */}
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-kumo-subtle">Team:</span>
-                  <div className="flex items-center -space-x-1.5">
+              {/* Team Members */}
+              <div className="flex items-center gap-2 text-xs">
+                <span className="text-kumo-subtle">Team:</span>
+                <div className="flex items-center -space-x-1.5">
+                  <UserAvatar
+                    src={selectedProject.creator?.avatarUrl}
+                    name={selectedProject.creator?.name}
+                    size={22}
+                  />
+                  {selectedProject.members.map((m) => (
                     <UserAvatar
-                      src={selectedProject.creator?.avatarUrl}
-                      name={selectedProject.creator?.name}
-                      size={24}
+                      key={m.id}
+                      src={m.user?.avatarUrl}
+                      name={m.user?.name}
+                      size={22}
                     />
-                    {selectedProject.members.map((m) => (
-                      <UserAvatar
-                        key={m.id}
-                        src={m.user?.avatarUrl}
-                        name={m.user?.name}
-                        size={24}
-                      />
-                    ))}
-                  </div>
+                  ))}
                 </div>
               </div>
+            </div>
 
-              {/* Sequential Horizontal Milestone Timeline Component */}
-              <div className="pt-2">
-                <MilestoneTimeline
-                  milestones={selectedProject.milestones}
-                  isAdvisorOrAdmin={true}
-                  onRefresh={fetchAdvisorProjects}
-                  onOpenEvaluationModal={(m) => {
-                    setEvaluatingMilestone(m);
-                  }}
-                />
-              </div>
-            </LayerCard>
+            {/* Sequential Horizontal Milestone Timeline Component */}
+            <MilestoneTimeline
+              milestones={selectedProject.milestones}
+              isAdvisorOrAdmin={true}
+              onRefresh={fetchAdvisorProjects}
+              onOpenEvaluationModal={(m) => {
+                setEvaluatingMilestone(m);
+              }}
+            />
           </div>
         ) : (
           /* Multi-Project Overview Table / Cards */

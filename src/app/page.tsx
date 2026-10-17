@@ -268,71 +268,65 @@ export default function HomePage() {
         {/* Projects Grid or Empty State or Project Milestone Track */}
         {selectedTrackProject ? (
           <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <button
-                type="button"
-                onClick={() => setSelectedTrackProject(null)}
-                className="flex items-center gap-1.5 text-xs font-medium text-kumo-subtle hover:text-kumo-default"
-              >
-                <ArrowRight weight="bold" size={14} className="rotate-180" />
-                <span>Back to projects overview</span>
-              </button>
-              <Badge variant={selectedTrackProject.status === "completed" ? "primary" : "secondary"}>
-                Status: {selectedTrackProject.status}
-              </Badge>
-            </div>
-
-            <LayerCard className="p-6 ring ring-kumo-line rounded-xl bg-kumo-base space-y-4">
-              <div className="border-b border-kumo-line pb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            {/* Top Project Header Bar */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-kumo-line pb-4">
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setSelectedTrackProject(null)}
+                  title="Return to projects"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-kumo-line bg-kumo-base text-kumo-subtle hover:text-kumo-default hover:border-kumo-brand/60 transition-colors shrink-0"
+                >
+                  <ArrowRight weight="bold" size={14} className="rotate-180" />
+                </button>
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="rounded bg-kumo-brand/10 px-2 py-0.5 text-[10px] font-medium text-kumo-brand">
                       {selectedTrackProject.subjectName}
                     </span>
-                    <h2 className="text-lg font-bold text-kumo-default">{selectedTrackProject.name}</h2>
+                    <h1 className="text-lg font-bold text-kumo-default">{selectedTrackProject.name}</h1>
                   </div>
                   {selectedTrackProject.description && (
-                    <p className="mt-1 text-xs text-kumo-subtle">{selectedTrackProject.description}</p>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-kumo-subtle">Advisor:</span>
-                  {selectedTrackProject.advisor ? (
-                    <div className="flex items-center gap-1.5">
-                      <UserAvatar
-                        src={selectedTrackProject.advisor.avatarUrl}
-                        name={selectedTrackProject.advisor.name}
-                        size={22}
-                      />
-                      <span className="text-xs font-semibold text-kumo-default">
-                        {selectedTrackProject.advisor.name}
-                      </span>
-                    </div>
-                  ) : (
-                    <span className="text-xs text-kumo-subtle italic">Unassigned</span>
+                    <p className="mt-0.5 text-xs text-kumo-subtle">{selectedTrackProject.description}</p>
                   )}
                 </div>
               </div>
 
-              {loadingMilestones ? (
-                <div className="flex h-40 items-center justify-center">
-                  <span className="text-xs text-kumo-subtle">Loading milestone tracking...</span>
-                </div>
-              ) : (
-                <div className="pt-2">
-                  <MilestoneTimeline
-                    milestones={projectMilestones}
-                    isAdvisorOrAdmin={
-                      currentUser?.role === "advisor" ||
-                      currentUser?.role === "instructor" ||
-                      currentUser?.role === "admin"
-                    }
-                    onRefresh={() => fetchProjectMilestones(selectedTrackProject.id)}
-                  />
-                </div>
-              )}
-            </LayerCard>
+              <div className="flex items-center gap-2 text-xs">
+                <span className="text-kumo-subtle">Advisor:</span>
+                {selectedTrackProject.advisor ? (
+                  <div className="flex items-center gap-1.5">
+                    <UserAvatar
+                      src={selectedTrackProject.advisor.avatarUrl}
+                      name={selectedTrackProject.advisor.name}
+                      size={22}
+                    />
+                    <span className="font-semibold text-kumo-default">
+                      {selectedTrackProject.advisor.name}
+                    </span>
+                  </div>
+                ) : (
+                  <span className="text-kumo-subtle italic">Unassigned</span>
+                )}
+              </div>
+            </div>
+
+            {/* Milestones Content */}
+            {loadingMilestones ? (
+              <div className="flex h-40 items-center justify-center">
+                <span className="text-xs text-kumo-subtle">Loading milestone tracking...</span>
+              </div>
+            ) : (
+              <MilestoneTimeline
+                milestones={projectMilestones}
+                isAdvisorOrAdmin={
+                  currentUser?.role === "advisor" ||
+                  currentUser?.role === "instructor" ||
+                  currentUser?.role === "admin"
+                }
+                onRefresh={() => fetchProjectMilestones(selectedTrackProject.id)}
+              />
+            )}
           </div>
         ) : loadingProjects ? (
           <div className="flex h-64 items-center justify-center">
