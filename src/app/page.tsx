@@ -722,22 +722,26 @@ export default function HomePage() {
           className="fixed z-50 transition-all duration-300 ease-out top-4 left-4 right-4 sm:top-auto sm:left-auto sm:bottom-6 sm:right-6 sm:w-auto"
         >
           <div
-            className={`flex items-center gap-2.5 rounded-lg border backdrop-blur-md px-4 py-2.5 text-xs font-medium shadow-lg ring-1 ring-black/5 ${
-              toastType === "success"
-                ? "border-green-500/30 bg-green-500/10 text-green-700 dark:text-green-300 dark:bg-green-950/80"
-                : "border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-300 dark:bg-red-950/80"
-            }`}
+            className="flex items-center gap-2.5 rounded-lg border border-kumo-line bg-kumo-base px-4 py-2.5 text-xs font-medium shadow-lg ring-1 ring-black/5"
           >
             {toastType === "success" ? (
               <CheckCircle weight="fill" size={18} className="text-green-600 dark:text-green-400 shrink-0" />
             ) : (
               <WarningCircle weight="fill" size={18} className="text-red-600 dark:text-red-400 shrink-0" />
             )}
-            <span className="truncate">{toastMessage}</span>
+            <span
+              className={`truncate font-medium ${
+                toastType === "success"
+                  ? "text-green-700 dark:text-green-400"
+                  : "text-red-700 dark:text-red-400"
+              }`}
+            >
+              {toastMessage}
+            </span>
             <button
               type="button"
               onClick={() => setToastMessage(null)}
-              className="ml-2 opacity-70 hover:opacity-100"
+              className="ml-2 text-kumo-subtle hover:text-kumo-default"
             >
               <X weight="bold" size={14} />
             </button>
