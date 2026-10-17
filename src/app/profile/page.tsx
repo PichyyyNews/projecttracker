@@ -305,31 +305,31 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                {/* Mobile-friendly action buttons: Split Left (Soft Blue) & Right (Soft Red) */}
+                {/* Mobile-friendly action buttons: Split Left (Light Blue) & Right (Light Red) */}
                 <div className="sm:hidden">
-                  {/* Left: Change Photo (Soft Blue) */}
+                  {/* Left: Change Photo (Light Blue) */}
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     title="Change photo"
-                    className="absolute -bottom-1 -left-1 flex h-6 w-6 items-center justify-center rounded-full border border-blue-200 bg-blue-50 text-blue-600 dark:border-blue-800/60 dark:bg-blue-950/60 dark:text-blue-300 shadow-xs transition-colors hover:bg-blue-100 dark:hover:bg-blue-900/50"
+                    className="absolute -bottom-1 -left-1 flex h-7 w-7 items-center justify-center rounded-full bg-blue-100 text-blue-600 border border-blue-300 ring-2 ring-white shadow-sm transition-transform active:scale-95"
                   >
                     {uploading ? (
-                      <SpinnerGap weight="thin" size={13} className="animate-spin" />
+                      <SpinnerGap weight="bold" size={14} className="animate-spin text-blue-600" />
                     ) : (
-                      <Camera weight="thin" size={13} />
+                      <Camera weight="bold" size={14} />
                     )}
                   </button>
 
-                  {/* Right: Delete Photo (Soft Red) */}
+                  {/* Right: Delete Photo (Light Red) */}
                   {formData.avatarUrl && (
                     <button
                       type="button"
                       onClick={handleRemoveAvatar}
                       title="Remove photo"
-                      className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border border-red-200 bg-red-50 text-red-600 dark:border-red-800/60 dark:bg-red-950/60 dark:text-red-300 shadow-xs transition-colors hover:bg-red-100 dark:hover:bg-red-900/50"
+                      className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-red-100 text-red-600 border border-red-300 ring-2 ring-white shadow-sm transition-transform active:scale-95"
                     >
-                      <Trash weight="thin" size={13} />
+                      <Trash weight="bold" size={14} />
                     </button>
                   )}
                 </div>
