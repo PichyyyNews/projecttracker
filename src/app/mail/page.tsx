@@ -837,7 +837,13 @@ export default function MailPage() {
                       (() => {
                         const user = contactsList.find((c) => c.id.toString() === composeData.receiverId);
                         return user ? (
-                          <UserAvatar src={user.avatarUrl || null} name={user.name} size={24} />
+                          <UserAvatar
+                            src={user.avatarUrl || null}
+                            name={user.name}
+                            size={24}
+                            role={user.role}
+                            showRoleBadge={true}
+                          />
                         ) : (
                           <div className="text-kumo-subtle">
                             <MagnifyingGlass weight="thin" size={14} />
@@ -859,22 +865,6 @@ export default function MailPage() {
                     placeholder="Search by name, role, email..."
                     className="flex-1 bg-transparent text-xs font-medium text-kumo-default placeholder:text-kumo-subtle placeholder:font-normal focus:outline-none min-w-0"
                   />
-
-                  {/* Role / Support Ticket Badge inside the input */}
-                  {composeData.receiverId === "system" ? (
-                    <span className="rounded bg-amber-500/10 px-1.5 py-0.5 text-[10px] text-amber-600 font-medium shrink-0">
-                      Support Ticket
-                    </span>
-                  ) : (
-                    (() => {
-                      const user = contactsList.find((c) => c.id.toString() === composeData.receiverId);
-                      return user ? (
-                        <Badge variant={USER_ROLES[user.role as UserRole]?.badgeVariant || "neutral"} className="shrink-0">
-                          {USER_ROLES[user.role as UserRole]?.label || user.role}
-                        </Badge>
-                      ) : null;
-                    })()
-                  )}
 
                   {/* Caret Button */}
                   <button
@@ -949,14 +939,15 @@ export default function MailPage() {
                             }`}
                           >
                             <div className="flex items-center gap-2.5 min-w-0">
-                              <UserAvatar src={contact.avatarUrl || null} name={contact.name} size={28} />
+                              <UserAvatar
+                                src={contact.avatarUrl || null}
+                                name={contact.name}
+                                size={28}
+                                role={contact.role}
+                                showRoleBadge={true}
+                              />
                               <div className="min-w-0">
-                                <div className="flex items-center gap-1.5">
-                                  <span className="font-semibold text-kumo-default truncate">{contact.name}</span>
-                                  <Badge variant={USER_ROLES[contact.role as UserRole]?.badgeVariant || "neutral"}>
-                                    {USER_ROLES[contact.role as UserRole]?.label || contact.role}
-                                  </Badge>
-                                </div>
+                                <span className="font-semibold text-kumo-default truncate block">{contact.name}</span>
                                 <div className="text-[11px] text-kumo-subtle truncate">{contact.email}</div>
                               </div>
                             </div>

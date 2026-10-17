@@ -469,12 +469,15 @@ export default function HomePage() {
                       const adv = contactsList.find((u) => u.id === selectedAdvisorId);
                       return adv ? (
                         <div className="flex items-center gap-2 flex-1 min-w-0">
-                          <UserAvatar src={adv.avatarUrl || null} name={adv.name} size={22} />
+                          <UserAvatar
+                            src={adv.avatarUrl || null}
+                            name={adv.name}
+                            size={24}
+                            role={adv.role}
+                            showRoleBadge={true}
+                          />
                           <span className="font-semibold text-kumo-default truncate">{adv.name}</span>
-                          <span className="text-[11px] text-kumo-subtle">({adv.email})</span>
-                          <Badge variant="primary" className="shrink-0">
-                            {USER_ROLES[adv.role as UserRole]?.label || adv.role}
-                          </Badge>
+                          <span className="text-[11px] text-kumo-subtle truncate">({adv.email})</span>
                         </div>
                       ) : null;
                     })()
@@ -552,16 +555,22 @@ export default function HomePage() {
                               isSelected ? "bg-kumo-tint font-medium" : "hover:bg-kumo-tint/60"
                             }`}
                           >
-                            <div className="flex items-center gap-2 min-w-0">
-                              <UserAvatar src={adv.avatarUrl || null} name={adv.name} size={24} />
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <UserAvatar
+                                src={adv.avatarUrl || null}
+                                name={adv.name}
+                                size={26}
+                                role={adv.role}
+                                showRoleBadge={true}
+                              />
                               <div className="min-w-0">
                                 <span className="font-semibold text-kumo-default truncate block">{adv.name}</span>
                                 <span className="text-[11px] text-kumo-subtle truncate block">{adv.email}</span>
                               </div>
                             </div>
-                            <Badge variant={USER_ROLES[adv.role as UserRole]?.badgeVariant || "neutral"}>
-                              {USER_ROLES[adv.role as UserRole]?.label || adv.role}
-                            </Badge>
+                            {isSelected && (
+                              <Check weight="bold" size={14} className="text-kumo-brand shrink-0" />
+                            )}
                           </div>
                         );
                       })}

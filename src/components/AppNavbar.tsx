@@ -120,22 +120,17 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             className="flex items-center gap-2 rounded-lg p-1.5 transition-none hover:bg-kumo-tint focus:outline-none"
           >
-            <UserAvatar src={currentUser?.avatarUrl} name={currentUser?.name} size={32} />
+            <UserAvatar
+              src={currentUser?.avatarUrl}
+              name={currentUser?.name}
+              size={32}
+              role={currentUser?.role}
+              showRoleBadge={true}
+            />
             <div className="hidden flex-col text-left sm:flex">
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-semibold text-kumo-default leading-tight">
-                  {currentUser?.name}
-                </span>
-                {currentUser?.role && currentUser.role !== "student" && (
-                  <Badge
-                    variant={
-                      USER_ROLES[currentUser.role as UserRole]?.badgeVariant || "neutral"
-                    }
-                  >
-                    {USER_ROLES[currentUser.role as UserRole]?.label || currentUser.role}
-                  </Badge>
-                )}
-              </div>
+              <span className="text-xs font-semibold text-kumo-default leading-tight">
+                {currentUser?.name}
+              </span>
               <span className="text-[11px] text-kumo-subtle leading-tight">
                 {currentUser?.email}
               </span>
