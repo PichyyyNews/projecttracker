@@ -330,74 +330,75 @@ export const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({
         {/* Timeline Bar Track */}
         <div className="relative py-4 px-2 sm:px-4">
           <div className="relative flex items-center justify-between w-full">
-            {/* Full Connecting Base Line - Runs directly through center of all nodes */}
-            <div className="absolute top-[18px] sm:top-5 left-4 right-4 sm:left-6 sm:right-6 h-1 -translate-y-1/2 bg-kumo-line rounded-full z-0" />
+            {/* Full Connecting Base Line - Runs directly through center of all node circles */}
+            <div className="absolute top-4 sm:top-[18px] left-4 right-4 sm:left-6 sm:right-6 h-0.5 -translate-y-1/2 bg-kumo-line z-0 pointer-events-none" />
 
             {/* 0% Origin Node */}
             <div className="relative z-10 flex flex-col items-center">
-              <div className="rounded-full bg-kumo-base p-1 ring-1 ring-kumo-line/40 shadow-xs">
-                <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">
-                  <CheckCircle weight="fill" size={17} />
+              <div className="rounded-full bg-kumo-base p-1 ring-2 ring-emerald-500/20 shadow-xs">
+                <div className="flex h-6 w-6 sm:h-7 sm:w-7 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400">
+                  <CheckCircle weight="fill" size={15} />
                 </div>
               </div>
-              <span className="mt-1 text-[10px] sm:text-xs font-semibold text-kumo-default">0%</span>
-              <span className="text-[9px] sm:text-[10px] text-kumo-subtle hidden xs:inline">Kickoff</span>
+              <span className="mt-1.5 text-[11px] sm:text-xs font-semibold text-kumo-default">0%</span>
+              <span className="text-[10px] text-kumo-subtle hidden xs:inline">Kickoff</span>
             </div>
 
             {/* Milestone Nodes (25%, 50%, 75%, 100%) */}
-            {milestones.map((m, idx) => {
+            {milestones.map((m) => {
               const isSelected = selectedMilestone?.id === m.id;
               const isApproved = m.status === "approved";
               const isPending = m.status === "pending_inspection";
               const isNeedsRevision = m.status === "needs_revision";
               const isInProgress = m.status === "in_progress";
 
-              let iconNode = <Lock weight="thin" size={14} className="sm:text-base" />;
-              let nodeBg = "bg-kumo-control text-kumo-subtle";
+              let iconNode = <Lock weight="bold" size={12} className="opacity-60" />;
+              let nodeBg = "bg-kumo-control/60 text-kumo-subtle";
+              let ringColor = isSelected ? "ring-kumo-brand" : "ring-kumo-line";
 
               if (isApproved) {
-                iconNode = <CheckCircle weight="fill" size={17} className="sm:text-lg" />;
-                nodeBg = "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400";
+                iconNode = <CheckCircle weight="fill" size={15} />;
+                nodeBg = "bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400";
+                ringColor = isSelected ? "ring-emerald-500" : "ring-emerald-500/30";
               } else if (isPending) {
-                iconNode = <Clock weight="fill" size={17} className="sm:text-lg" />;
-                nodeBg = "bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400 animate-pulse";
+                iconNode = <Clock weight="fill" size={15} />;
+                nodeBg = "bg-amber-500/10 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400 animate-pulse";
+                ringColor = isSelected ? "ring-amber-500" : "ring-amber-500/30";
               } else if (isNeedsRevision) {
-                iconNode = <WarningCircle weight="fill" size={17} className="sm:text-lg" />;
-                nodeBg = "bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400";
+                iconNode = <WarningCircle weight="fill" size={15} />;
+                nodeBg = "bg-rose-500/10 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400";
+                ringColor = isSelected ? "ring-rose-500" : "ring-rose-500/30";
               } else if (isInProgress) {
-                iconNode = <Sparkle weight="fill" size={17} className="sm:text-lg" />;
-                nodeBg = "bg-blue-50 text-kumo-brand dark:bg-blue-950/40";
+                iconNode = <Sparkle weight="fill" size={15} />;
+                nodeBg = "bg-kumo-brand/10 text-kumo-brand dark:bg-kumo-brand/20";
+                ringColor = isSelected ? "ring-kumo-brand" : "ring-kumo-brand/30";
               }
 
               return (
                 <div
                   key={m.id}
                   onClick={() => setSelectedMilestone(m)}
-                  className={`relative z-10 flex flex-col items-center cursor-pointer group transition-transform ${
+                  className={`relative z-10 flex flex-col items-center cursor-pointer group transition-all ${
                     isSelected ? "scale-105" : "hover:scale-105"
                   }`}
                 >
                   <div
-                    className={`rounded-full bg-kumo-base p-1 ring-2 transition-all shadow-xs ${
-                      isSelected
-                        ? "ring-kumo-brand"
-                        : "ring-kumo-line/60 group-hover:ring-kumo-brand/40"
-                    }`}
+                    className={`rounded-full bg-kumo-base p-1 ring-2 transition-all shadow-xs ${ringColor}`}
                   >
                     <div
-                      className={`flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full ${nodeBg}`}
+                      className={`flex h-6 w-6 sm:h-7 sm:w-7 items-center justify-center rounded-full ${nodeBg}`}
                     >
                       {iconNode}
                     </div>
                   </div>
                   <span
-                    className={`mt-1 text-[10px] sm:text-xs font-semibold transition-colors ${
+                    className={`mt-1.5 text-[11px] sm:text-xs font-semibold transition-colors ${
                       isSelected ? "text-kumo-brand" : "text-kumo-default"
                     }`}
                   >
                     {m.stage}%
                   </span>
-                  <span className="text-[9px] sm:text-[10px] text-kumo-subtle max-w-[65px] sm:max-w-[90px] truncate text-center">
+                  <span className="text-[10px] text-kumo-subtle max-w-[70px] sm:max-w-[100px] truncate text-center">
                     {m.status === "approved"
                       ? "Approved"
                       : m.status === "pending_inspection"
