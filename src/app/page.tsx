@@ -212,24 +212,26 @@ export default function HomePage() {
 
       {/* Main Content Area */}
       <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-8 sm:px-6">
-        {/* Workspace Action Bar */}
-        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-xl font-semibold text-kumo-default">Projects & Workspace</h1>
-            <p className="text-xs text-kumo-subtle mt-0.5">
-              Manage your academic capstone projects, teammates, and advisor reviews.
-            </p>
-          </div>
+        {/* Workspace Action Bar (Only shown when there is at least 1 project) */}
+        {!loadingProjects && projectsList.length > 0 && (
+          <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 className="text-xl font-semibold text-kumo-default">Projects & Workspace</h1>
+              <p className="text-xs text-kumo-subtle mt-0.5">
+                Manage your academic capstone projects, teammates, and advisor reviews.
+              </p>
+            </div>
 
-          <Button
-            variant="primary"
-            onClick={() => setIsCreateOpen(true)}
-            className="self-start sm:self-auto"
-          >
-            <Plus weight="thin" size={16} className="mr-1.5" />
-            <span>Create new project</span>
-          </Button>
-        </div>
+            <Button
+              variant="primary"
+              onClick={() => setIsCreateOpen(true)}
+              className="self-start sm:self-auto"
+            >
+              <Plus weight="thin" size={16} className="mr-1.5" />
+              <span>Create new project</span>
+            </Button>
+          </div>
+        )}
 
         {/* Projects Grid or Empty State */}
         {loadingProjects ? (
@@ -237,9 +239,9 @@ export default function HomePage() {
             <span className="text-xs text-kumo-subtle">Loading workspace projects...</span>
           </div>
         ) : projectsList.length === 0 ? (
-          <div className="flex flex-1 flex-col items-center justify-center py-16">
+          <div className="flex flex-1 flex-col items-center justify-center py-16 -translate-y-[6vh]">
             <div className="w-full max-w-md text-center">
-              <LayerCard className="p-8 ring ring-kumo-line rounded-xl bg-kumo-base">
+              <LayerCard className="p-8 ring ring-kumo-line rounded-xl bg-kumo-base shadow-xs">
                 <div className="mb-4 flex flex-col items-center justify-center">
                   <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-kumo-control ring ring-kumo-line text-kumo-subtle">
                     <FolderOpen weight="thin" size={32} />
@@ -354,6 +356,22 @@ export default function HomePage() {
                 </div>
               </LayerCard>
             ))}
+
+            {/* Create Next Project Card (Appears after the last project) */}
+            <div
+              onClick={() => setIsCreateOpen(true)}
+              className="group flex min-h-[220px] cursor-pointer flex-col items-center justify-center rounded-xl border border-kumo-line bg-kumo-base p-6 text-center ring ring-kumo-line transition-all duration-150 hover:border-kumo-brand/60 hover:bg-kumo-tint/30 shadow-sm"
+            >
+              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-kumo-control ring ring-kumo-line text-kumo-subtle group-hover:bg-kumo-brand group-hover:text-white group-hover:ring-kumo-brand transition-colors">
+                <Plus weight="thin" size={26} />
+              </div>
+              <h3 className="text-sm font-semibold text-kumo-default group-hover:text-kumo-brand transition-colors">
+                Create new project
+              </h3>
+              <p className="mt-1 text-xs text-kumo-subtle max-w-[200px]">
+                Add another capstone or subject project to your workspace.
+              </p>
+            </div>
           </div>
         )}
       </main>
