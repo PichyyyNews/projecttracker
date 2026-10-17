@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Badge } from "@cloudflare/kumo";
 import {
   Kanban,
@@ -11,6 +11,10 @@ import {
   User,
   EnvelopeSimple,
   Gear,
+  CheckCircle,
+  WarningCircle,
+  X,
+  Bell,
 } from "@phosphor-icons/react";
 import UserAvatar from "@/components/UserAvatar";
 import { USER_ROLES, UserRole } from "@/lib/roles";
@@ -33,7 +37,60 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
   subtitle = "Workspace",
 }) => {
   const router = useRouter();
+  const pathname = usePathname();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState<number>(0);
+  const [toastNotification, setToastNotification] = useState<{
+    id: number;
+    subject: string;
+    senderName: string;
+  } | null>(null);
+
+  // Poll for unread messages every 15s to notify user
+  useEffect(() => {
+    if (!currentUser) return;
+
+    let isMounted = true;
+    let lastKnownUnreadCount = 0;
+
+    const checkMessages = async () => {
+      try {
+        const res = await fetch("/api/messages");
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.success && isMounted) {
+          const unread = data.data.filter(
+            (m: any) => m.status === "unread" && m.senderId !== currentUser.id
+          );
+          setUnreadCount(unread.length);
+
+          // If there is a new incoming unread message and not on /mail, trigger toast
+          if (unread.length > lastKnownUnreadCount && pathname !== "/mail") {
+            const newest = unread[0];
+            setToastNotification({
+              id: newest.id,
+              subject: newest.subject,
+              senderName: newest.sender?.name || "System",
+            });
+            setTimeout(() => {
+              if (isMounted) setToastNotification(null);
+            }, 6000);
+          }
+          lastKnownUnreadCount = unread.length;
+        }
+      } catch (err) {
+        // quiet error on background poll
+      }
+    };
+
+    checkMessages();
+    const interval = setInterval(checkMessages, 15000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [currentUser, pathname]);
 
   const handleLogout = async () => {
     await fetch("/api/auth/me", { method: "POST" });
@@ -124,14 +181,21 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                   <span>Profile</span>
                 </Link>
 
-                <a
-                  href={`mailto:${currentUser?.email}`}
+                <Link
+                  href="/mail"
                   onClick={() => setIsDropdownOpen(false)}
-                  className="flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium text-kumo-default hover:bg-kumo-tint transition-none"
+                  className="flex w-full items-center justify-between px-3 py-2 text-xs font-medium text-kumo-default hover:bg-kumo-tint transition-none"
                 >
-                  <EnvelopeSimple weight="thin" size={16} className="text-kumo-subtle" />
-                  <span>Mail</span>
-                </a>
+                  <div className="flex items-center gap-2.5">
+                    <EnvelopeSimple weight="thin" size={16} className="text-kumo-subtle" />
+                    <span>Mail</span>
+                  </div>
+                  {unreadCount > 0 && (
+                    <span className="rounded-full bg-red-600 px-1.5 py-0.2 text-[10px] font-bold text-white">
+                      {unreadCount}
+                    </span>
+                  )}
+                </Link>
 
                 <button
                   type="button"
@@ -161,6 +225,42 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
           )}
         </div>
       </div>
+
+      {/* Floating Responsive Toast Notification for New Incoming Messages */}
+      {toastNotification && (
+        <aside
+          role="status"
+          className="fixed z-50 transition-all duration-300 ease-out top-4 left-4 right-4 sm:top-auto sm:left-auto sm:bottom-6 sm:right-6 sm:w-auto"
+        >
+          <div className="flex items-center gap-3 rounded-lg border border-kumo-line bg-kumo-base/95 backdrop-blur-md px-4 py-3 text-xs font-medium shadow-xl ring-1 ring-black/5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-kumo-brand/10 text-kumo-brand shrink-0">
+              <EnvelopeSimple weight="thin" size={18} />
+            </div>
+            <div className="flex flex-col min-w-0 pr-2">
+              <span className="font-semibold text-kumo-default">
+                New message from {toastNotification.senderName}
+              </span>
+              <span className="text-[11px] text-kumo-subtle truncate max-w-[240px]">
+                {toastNotification.subject}
+              </span>
+            </div>
+            <Link
+              href="/mail"
+              onClick={() => setToastNotification(null)}
+              className="rounded bg-kumo-brand px-2.5 py-1 text-xs font-semibold text-white hover:bg-kumo-brand/90 transition-none"
+            >
+              Read
+            </Link>
+            <button
+              type="button"
+              onClick={() => setToastNotification(null)}
+              className="text-kumo-subtle hover:text-kumo-default"
+            >
+              <X weight="bold" size={14} />
+            </button>
+          </div>
+        </aside>
+      )}
     </header>
   );
 };

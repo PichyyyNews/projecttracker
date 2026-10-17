@@ -24,6 +24,9 @@ import {
   GraduationCap,
   CloudArrowUp,
   Plus,
+  Lifebuoy,
+  EnvelopeSimple,
+  Check,
 } from "@phosphor-icons/react";
 import UserAvatar from "@/components/UserAvatar";
 import { USER_ROLES, ROLE_OPTIONS, UserRole } from "@/lib/roles";
@@ -68,7 +71,25 @@ interface AcademicClassItem {
   major: string;
 }
 
-type AdminSection = "users" | "academic" | "minio" | "google" | "overview" | "system";
+interface TicketItem {
+  id: number;
+  senderId: number | null;
+  receiverId: number | null;
+  subject: string;
+  content: string;
+  type: string;
+  status: string;
+  createdAt: string;
+  sender: {
+    id: number;
+    name: string;
+    email: string;
+    role: string;
+    studentId?: string;
+  };
+}
+
+type AdminSection = "users" | "tickets" | "academic" | "minio" | "google" | "overview" | "system";
 
 export default function AdminPage() {
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
@@ -79,6 +100,7 @@ export default function AdminPage() {
   // Active section in Sidebar
   const [activeSection, setActiveSection] = useState<AdminSection>("users");
   const [usersList, setUsersList] = useState<AdminUser[]>([]);
+  const [ticketsList, setTicketsList] = useState<TicketItem[]>([]);
   const [googleConfig, setGoogleConfig] = useState<GoogleConfigData>({
     google_client_id: "",
     google_client_secret: "",
@@ -106,6 +128,11 @@ export default function AdminPage() {
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [saveLoading, setSaveLoading] = useState(false);
 
+  // Ticket Management State
+  const [selectedTicket, setSelectedTicket] = useState<TicketItem | null>(null);
+  const [ticketReplyText, setTicketReplyText] = useState("");
+  const [ticketActionLoading, setTicketActionLoading] = useState(false);
+
   // Check initial PIN authorization
   useEffect(() => {
     async function checkAuth() {
@@ -125,11 +152,12 @@ export default function AdminPage() {
 
   const loadAdminData = async () => {
     try {
-      const [uRes, gRes, mRes, aRes] = await Promise.all([
+      const [uRes, gRes, mRes, aRes, tRes] = await Promise.all([
         fetch("/api/admin/users"),
         fetch("/api/admin/google-config"),
         fetch("/api/admin/minio-config"),
         fetch("/api/admin/academic"),
+        fetch("/api/admin/tickets"),
       ]);
 
       if (uRes.ok) {
@@ -153,6 +181,11 @@ export default function AdminPage() {
           setDepartmentsList(aData.departments);
           setAcademicClassesList(aData.academicClasses);
         }
+      }
+
+      if (tRes.ok) {
+        const tData = await tRes.json();
+        if (tData.success) setTicketsList(tData.data);
       }
     } catch (err) {
       console.error("Failed to load admin data", err);
@@ -235,6 +268,63 @@ export default function AdminPage() {
       }
     } catch (err) {
       alert("Failed to delete user");
+    }
+  };
+
+  // Ticket Handlers
+  const handleUpdateTicketStatus = async (ticketId: number, status: string) => {
+    setTicketActionLoading(true);
+    try {
+      const res = await fetch("/api/admin/tickets", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ticketId, status }),
+      });
+      if (res.ok) {
+        setTicketsList((prev) =>
+          prev.map((t) => (t.id === ticketId ? { ...t, status } : t))
+        );
+        if (selectedTicket && selectedTicket.id === ticketId) {
+          setSelectedTicket({ ...selectedTicket, status });
+        }
+      }
+    } catch (err) {
+      alert("Failed to update ticket status");
+    } finally {
+      setTicketActionLoading(false);
+    }
+  };
+
+  const handleReplyToTicket = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedTicket || !ticketReplyText.trim()) return;
+
+    setTicketActionLoading(true);
+    try {
+      const res = await fetch("/api/admin/tickets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          receiverId: selectedTicket.senderId,
+          subject: selectedTicket.subject.startsWith("Re:") ? selectedTicket.subject : `Re: ${selectedTicket.subject}`,
+          content: ticketReplyText.trim(),
+          parentId: selectedTicket.id,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        // Also auto-resolve or mark as answered
+        await handleUpdateTicketStatus(selectedTicket.id, "resolved");
+        setTicketReplyText("");
+        alert("Reply sent to user successfully!");
+      } else {
+        alert(data.error || "Failed to send reply");
+      }
+    } catch (err) {
+      alert("Error sending ticket reply");
+    } finally {
+      setTicketActionLoading(false);
     }
   };
 
@@ -463,6 +553,26 @@ export default function AdminPage() {
 
               <button
                 type="button"
+                onClick={() => { setActiveSection("tickets"); setSaveMessage(null); }}
+                className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition-none ${
+                  activeSection === "tickets"
+                    ? "bg-kumo-tint text-kumo-brand"
+                    : "text-kumo-default hover:bg-kumo-tint"
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <Lifebuoy weight="thin" size={18} />
+                  <span>Support tickets</span>
+                </div>
+                {ticketsList.filter((t) => t.status === "unread").length > 0 ? (
+                  <Badge variant="warning">{ticketsList.filter((t) => t.status === "unread").length}</Badge>
+                ) : (
+                  <Badge variant="neutral">{ticketsList.length}</Badge>
+                )}
+              </button>
+
+              <button
+                type="button"
                 onClick={() => { setActiveSection("academic"); setSaveMessage(null); }}
                 className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition-none ${
                   activeSection === "academic"
@@ -588,6 +698,19 @@ export default function AdminPage() {
             }`}
           >
             Users ({usersList.length})
+          </button>
+          <button
+            onClick={() => setActiveSection("tickets")}
+            className={`whitespace-nowrap px-3 py-2 text-xs font-medium border-b-2 flex items-center gap-1.5 ${
+              activeSection === "tickets" ? "border-kumo-brand text-kumo-brand" : "border-transparent text-kumo-subtle"
+            }`}
+          >
+            <span>Tickets</span>
+            {ticketsList.filter((t) => t.status === "unread").length > 0 && (
+              <span className="rounded-full bg-red-600 px-1.5 py-0.2 text-[10px] text-white font-bold">
+                {ticketsList.filter((t) => t.status === "unread").length}
+              </span>
+            )}
           </button>
           <button
             onClick={() => setActiveSection("academic")}
@@ -724,6 +847,236 @@ export default function AdminPage() {
                   </Table.Body>
                 </Table>
               </LayerCard>
+            </div>
+          )}
+
+          {/* 1.5 SUPPORT TICKETS VIEW (System Replies & Support) */}
+          {activeSection === "tickets" && (
+            <div className="grid gap-6">
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h1 className="text-xl font-semibold text-kumo-default">Support tickets & system replies</h1>
+                  <p className="text-xs text-kumo-subtle">
+                    User replies to system notifications and inquiries automatically routed here.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="neutral">Total: {ticketsList.length}</Badge>
+                  <Badge variant={ticketsList.filter((t) => t.status === "unread").length > 0 ? "destructive" : "success"}>
+                    Unread: {ticketsList.filter((t) => t.status === "unread").length}
+                  </Badge>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                {/* Tickets List */}
+                <div className="lg:col-span-7">
+                  <LayerCard className="p-0 ring ring-kumo-line rounded-lg bg-kumo-base overflow-hidden">
+                    <Table>
+                      <Table.Header>
+                        <Table.Row>
+                          <Table.Head>Sender</Table.Head>
+                          <Table.Head>Subject & preview</Table.Head>
+                          <Table.Head>Status</Table.Head>
+                          <Table.Head className="text-right">Action</Table.Head>
+                        </Table.Row>
+                      </Table.Header>
+                      <Table.Body>
+                        {ticketsList.length === 0 ? (
+                          <Table.Row>
+                            <Table.Cell colSpan={4} className="text-center py-10 text-xs text-kumo-subtle">
+                              No support tickets or system replies found.
+                            </Table.Cell>
+                          </Table.Row>
+                        ) : (
+                          ticketsList.map((ticket) => {
+                            const isSelected = selectedTicket?.id === ticket.id;
+                            const isUnread = ticket.status === "unread";
+                            return (
+                              <Table.Row
+                                key={ticket.id}
+                                className={`cursor-pointer transition-colors ${
+                                  isSelected ? "bg-kumo-control/60" : "hover:bg-kumo-control/30"
+                                } ${isUnread ? "font-medium" : ""}`}
+                                onClick={() => {
+                                  setSelectedTicket(ticket);
+                                  if (isUnread) {
+                                    handleUpdateTicketStatus(ticket.id, "read");
+                                  }
+                                }}
+                              >
+                                <Table.Cell>
+                                  <div className="flex items-center gap-2">
+                                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-kumo-brand/10 text-kumo-brand text-xs font-semibold">
+                                      {ticket.sender?.name?.charAt(0).toUpperCase() || "U"}
+                                    </div>
+                                    <div className="min-w-0">
+                                      <div className="text-xs font-medium text-kumo-default truncate max-w-[120px]">
+                                        {ticket.sender?.name || "User"}
+                                      </div>
+                                      <div className="text-[10px] text-kumo-subtle truncate max-w-[120px]">
+                                        {ticket.sender?.role || "user"}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </Table.Cell>
+
+                                <Table.Cell>
+                                  <div className="min-w-0 max-w-[200px] sm:max-w-[260px]">
+                                    <div className="text-xs text-kumo-default truncate flex items-center gap-1.5">
+                                      {ticket.type === "system" && (
+                                        <span className="rounded bg-amber-500/10 px-1 py-0.2 text-[9px] text-amber-600 font-medium">
+                                          System
+                                        </span>
+                                      )}
+                                      <span className="truncate">{ticket.subject}</span>
+                                    </div>
+                                    <div className="text-[11px] text-kumo-subtle truncate mt-0.5">
+                                      {ticket.content}
+                                    </div>
+                                  </div>
+                                </Table.Cell>
+
+                                <Table.Cell>
+                                  <Badge
+                                    variant={
+                                      ticket.status === "unread"
+                                        ? "destructive"
+                                        : ticket.status === "resolved"
+                                        ? "success"
+                                        : "neutral"
+                                    }
+                                  >
+                                    {ticket.status}
+                                  </Badge>
+                                </Table.Cell>
+
+                                <Table.Cell className="text-right">
+                                  <span className="text-[11px] text-kumo-subtle">
+                                    {new Date(ticket.createdAt).toLocaleDateString([], {
+                                      month: "short",
+                                      day: "numeric",
+                                    })}
+                                  </span>
+                                </Table.Cell>
+                              </Table.Row>
+                            );
+                          })
+                        )}
+                      </Table.Body>
+                    </Table>
+                  </LayerCard>
+                </div>
+
+                {/* Ticket Detail / Reply Panel */}
+                <div className="lg:col-span-5">
+                  {selectedTicket ? (
+                    <LayerCard className="p-5 ring ring-kumo-line rounded-lg bg-kumo-base sticky top-4 flex flex-col gap-4">
+                      <div className="flex items-start justify-between border-b border-kumo-line pb-3">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-mono text-kumo-subtle">#{selectedTicket.id}</span>
+                            <Badge
+                              variant={
+                                selectedTicket.status === "unread"
+                                  ? "destructive"
+                                  : selectedTicket.status === "resolved"
+                                  ? "success"
+                                  : "neutral"
+                              }
+                            >
+                              {selectedTicket.status}
+                            </Badge>
+                          </div>
+                          <h2 className="text-sm font-semibold text-kumo-default mt-1">
+                            {selectedTicket.subject}
+                          </h2>
+                        </div>
+
+                        <div className="flex items-center gap-1.5">
+                          {selectedTicket.status !== "resolved" ? (
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              disabled={ticketActionLoading}
+                              onClick={() => handleUpdateTicketStatus(selectedTicket.id, "resolved")}
+                            >
+                              <Check weight="thin" size={14} className="mr-1 text-emerald-600" />
+                              <span>Resolve</span>
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              disabled={ticketActionLoading}
+                              onClick={() => handleUpdateTicketStatus(selectedTicket.id, "read")}
+                            >
+                              <span>Reopen</span>
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Sender Info */}
+                      <div className="rounded border border-kumo-line bg-kumo-control/30 p-3 text-xs">
+                        <div className="flex items-center justify-between">
+                          <span className="text-kumo-subtle">From:</span>
+                          <span className="font-medium text-kumo-default">
+                            {selectedTicket.sender?.name} ({selectedTicket.sender?.email})
+                          </span>
+                        </div>
+                        <div className="mt-1 flex items-center justify-between">
+                          <span className="text-kumo-subtle">Role:</span>
+                          <span className="capitalize text-kumo-default">{selectedTicket.sender?.role || "User"}</span>
+                        </div>
+                        {selectedTicket.sender?.studentId && (
+                          <div className="mt-1 flex items-center justify-between">
+                            <span className="text-kumo-subtle">Student ID:</span>
+                            <span className="font-mono text-kumo-default">{selectedTicket.sender.studentId}</span>
+                          </div>
+                        )}
+                        <div className="mt-1 flex items-center justify-between">
+                          <span className="text-kumo-subtle">Received:</span>
+                          <span className="text-kumo-subtle">
+                            {new Date(selectedTicket.createdAt).toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Message Content */}
+                      <div className="rounded border border-kumo-line bg-kumo-base p-4 text-xs leading-relaxed text-kumo-default whitespace-pre-wrap">
+                        {selectedTicket.content}
+                      </div>
+
+                      {/* Reply form */}
+                      <form onSubmit={handleReplyToTicket} className="grid gap-2 border-t border-kumo-line pt-3">
+                        <label className="text-xs font-medium text-kumo-default">
+                          Reply to user (will be delivered as system notification)
+                        </label>
+                        <textarea
+                          rows={3}
+                          className="w-full rounded border border-kumo-line bg-kumo-control p-2.5 text-xs text-kumo-default placeholder:text-kumo-subtle focus:border-kumo-brand focus:outline-none"
+                          placeholder="Write reply here..."
+                          value={ticketReplyText}
+                          onChange={(e) => setTicketReplyText(e.target.value)}
+                          required
+                        />
+                        <div className="flex justify-end">
+                          <Button variant="primary" size="sm" type="submit" disabled={ticketActionLoading}>
+                            <EnvelopeSimple weight="thin" size={14} className="mr-1.5" />
+                            <span>{ticketActionLoading ? "Sending..." : "Send reply & resolve"}</span>
+                          </Button>
+                        </div>
+                      </form>
+                    </LayerCard>
+                  ) : (
+                    <div className="flex h-64 flex-col items-center justify-center rounded-lg border border-dashed border-kumo-line p-6 text-center text-xs text-kumo-subtle">
+                      <Lifebuoy weight="thin" size={32} className="mb-2 text-kumo-subtle" />
+                      Select a ticket from the list to view details and send a reply.
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           )}
 
