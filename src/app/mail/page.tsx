@@ -216,11 +216,11 @@ export default function MailPage() {
 
       setIsComposeOpen(false);
       setComposeData({ receiverId: "system", subject: "", content: "" });
-      setRecipientSearch("College Administration");
+      setRecipientSearch("Administration");
       setIsRecipientMenuOpen(false);
       showToast(
         isSystemOrTicket
-          ? "Support ticket sent to college admin"
+          ? "Support ticket sent to administration"
           : "Message sent successfully"
       );
       loadMailData(activeTab);
@@ -441,8 +441,8 @@ export default function MailPage() {
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-2 min-w-0">
                           {isSystem ? (
-                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400">
-                              <Sparkle weight="thin" size={16} />
+                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-kumo-control p-1 ring-1 ring-kumo-line overflow-hidden">
+                              <img src="/logo.svg" alt="System Logo" className="h-full w-full object-contain" />
                             </div>
                           ) : isTicket ? (
                             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-orange-100 text-orange-600 dark:bg-orange-950/40 dark:text-orange-400">
@@ -460,7 +460,7 @@ export default function MailPage() {
                               {isSentView ? (
                                 <>
                                   <span className="text-[10px] font-normal text-kumo-subtle mr-1">To:</span>
-                                  {m.receiver ? m.receiver.name : "College Administration"}
+                                  {m.receiver ? m.receiver.name : "Administration"}
                                 </>
                               ) : isSystem ? (
                                 "System Automated"
@@ -532,9 +532,8 @@ export default function MailPage() {
                     </button>
 
                     {selectedMessage.type === "system" ? (
-                      <div className="flex h-9 w-9 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400">
-                        <Sparkle weight="thin" size={20} className="sm:hidden" />
-                        <Sparkle weight="thin" size={24} className="hidden sm:block" />
+                      <div className="flex h-9 w-9 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-full bg-kumo-control p-1.5 ring-1 ring-kumo-line overflow-hidden">
+                        <img src="/logo.svg" alt="System Logo" className="h-full w-full object-contain" />
                       </div>
                     ) : selectedMessage.type === "ticket" ? (
                       <div className="flex h-9 w-9 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-full bg-orange-100 text-orange-600 dark:bg-orange-950/40 dark:text-orange-400">
@@ -565,7 +564,7 @@ export default function MailPage() {
                       <span className="text-[11px] sm:text-xs text-kumo-subtle truncate">
                         {activeTab === "sent" ? (
                           <>
-                            To: <span className="text-kumo-default">{selectedMessage.receiver?.name || "College Administration"}</span>
+                            To: <span className="text-kumo-default">{selectedMessage.receiver?.name || "Administration"}</span>
                           </>
                         ) : (
                           <>
@@ -830,8 +829,8 @@ export default function MailPage() {
                   {/* Selected Recipient Avatar / Icon */}
                   <div className="shrink-0 flex items-center">
                     {composeData.receiverId === "system" ? (
-                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400">
-                        <Sparkle weight="thin" size={14} />
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-kumo-control p-1 ring-1 ring-kumo-line overflow-hidden">
+                        <img src="/logo.svg" alt="System Logo" className="h-full w-full object-contain" />
                       </div>
                     ) : (
                       (() => {
@@ -887,11 +886,11 @@ export default function MailPage() {
                 {isRecipientMenuOpen && (
                   <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-60 overflow-y-auto rounded-md border border-kumo-line bg-kumo-base shadow-xl ring-1 ring-black/5 divide-y divide-kumo-line">
                     {/* 1. System Support Ticket option */}
-                    {("college administration support ticket".includes(recipientSearch.toLowerCase()) || !recipientSearch.trim()) && (
+                    {("administration support ticket".includes(recipientSearch.toLowerCase()) || !recipientSearch.trim()) && (
                       <div
                         onClick={() => {
                           setComposeData({ ...composeData, receiverId: "system" });
-                          setRecipientSearch("College Administration");
+                          setRecipientSearch("Administration");
                           setIsRecipientMenuOpen(false);
                         }}
                         className={`flex items-center justify-between p-2.5 cursor-pointer text-xs transition-colors ${
@@ -899,11 +898,11 @@ export default function MailPage() {
                         }`}
                       >
                         <div className="flex items-center gap-2.5">
-                          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-100 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400">
-                            <Sparkle weight="thin" size={16} />
+                          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-kumo-control p-1 ring-1 ring-kumo-line overflow-hidden">
+                            <img src="/logo.svg" alt="System Logo" className="h-full w-full object-contain" />
                           </div>
                           <div>
-                            <div className="font-semibold text-kumo-default">College Administration</div>
+                            <div className="font-semibold text-kumo-default">Administration</div>
                             <div className="text-[11px] text-kumo-subtle">Official Support Ticket to Admins</div>
                           </div>
                         </div>
