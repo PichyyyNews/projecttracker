@@ -441,8 +441,8 @@ export default function MailPage() {
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-2 min-w-0">
                           {isSystem ? (
-                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-kumo-control p-1 ring-1 ring-kumo-line overflow-hidden">
-                              <img src="/logo.svg" alt="System Logo" className="h-full w-full object-contain" />
+                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-kumo-control ring-1 ring-kumo-line overflow-hidden">
+                              <img src="/logo.svg" alt="System Logo" className="h-full w-full object-cover scale-150" />
                             </div>
                           ) : isTicket ? (
                             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-orange-100 text-orange-600 dark:bg-orange-950/40 dark:text-orange-400">
@@ -532,8 +532,8 @@ export default function MailPage() {
                     </button>
 
                     {selectedMessage.type === "system" ? (
-                      <div className="flex h-9 w-9 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-full bg-kumo-control p-1.5 ring-1 ring-kumo-line overflow-hidden">
-                        <img src="/logo.svg" alt="System Logo" className="h-full w-full object-contain" />
+                      <div className="flex h-9 w-9 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-full bg-kumo-control ring-1 ring-kumo-line overflow-hidden">
+                        <img src="/logo.svg" alt="System Logo" className="h-full w-full object-cover scale-150" />
                       </div>
                     ) : selectedMessage.type === "ticket" ? (
                       <div className="flex h-9 w-9 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-full bg-orange-100 text-orange-600 dark:bg-orange-950/40 dark:text-orange-400">
@@ -829,8 +829,8 @@ export default function MailPage() {
                   {/* Selected Recipient Avatar / Icon */}
                   <div className="shrink-0 flex items-center">
                     {composeData.receiverId === "system" ? (
-                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-kumo-control p-1 ring-1 ring-kumo-line overflow-hidden">
-                        <img src="/logo.svg" alt="System Logo" className="h-full w-full object-contain" />
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-kumo-control ring-1 ring-kumo-line overflow-hidden">
+                        <img src="/logo.svg" alt="System Logo" className="h-full w-full object-cover scale-150" />
                       </div>
                     ) : (
                       (() => {
@@ -898,8 +898,8 @@ export default function MailPage() {
                         }`}
                       >
                         <div className="flex items-center gap-2.5">
-                          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-kumo-control p-1 ring-1 ring-kumo-line overflow-hidden">
-                            <img src="/logo.svg" alt="System Logo" className="h-full w-full object-contain" />
+                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-kumo-control ring-1 ring-kumo-line overflow-hidden shrink-0">
+                            <img src="/logo.svg" alt="System Logo" className="h-full w-full object-cover scale-150" />
                           </div>
                           <div>
                             <div className="font-semibold text-kumo-default">Administration</div>
