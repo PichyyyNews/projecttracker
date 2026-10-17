@@ -473,8 +473,90 @@ export default function MailPage() {
                 {/* Message Body */}
                 <div className="flex-1 overflow-y-auto p-6 space-y-6">
                   <div className="rounded-lg border border-kumo-line bg-kumo-control/30 p-5 text-xs text-kumo-default leading-relaxed whitespace-pre-wrap">
-                    {selectedMessage.content}
+                    {selectedMessage.content.replace(/\[ACCEPT_PROJECT:\d+\]\s*\[REJECT_PROJECT:\d+\]/g, "").trim()}
                   </div>
+
+                  {/* Interactive Project Invitation Banner if invitation detected */}
+                  {selectedMessage.content.includes("[ACCEPT_PROJECT:") && (
+                    (() => {
+                      const match = selectedMessage.content.match(/\[ACCEPT_PROJECT:(\d+)\]/);
+                      const invProjectId = match ? parseInt(match[1], 10) : null;
+                      if (!invProjectId) return null;
+
+                      return (
+                        <div className="rounded-lg border border-kumo-brand/30 bg-kumo-brand/5 p-4 text-xs">
+                          <div className="font-semibold text-kumo-default mb-1 flex items-center gap-2">
+                            <Sparkle weight="thin" size={16} className="text-kumo-brand" />
+                            <span>Action Required: Project Invitation Response</span>
+                          </div>
+                          <p className="text-kumo-subtle mb-4">
+                            You have been invited to collaborate on this project. Please confirm whether you accept or decline.
+                          </p>
+                          <div className="flex items-center gap-2.5">
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              disabled={sending}
+                              onClick={async () => {
+                                setSending(true);
+                                try {
+                                  const res = await fetch("/api/projects/respond", {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({ projectId: invProjectId, action: "accept" }),
+                                  });
+                                  const d = await res.json();
+                                  if (d.success) {
+                                    showToast("Project invitation accepted successfully!");
+                                    loadMailData();
+                                  } else {
+                                    showToast(d.error || "Failed to accept", "error");
+                                  }
+                                } catch (e: any) {
+                                  showToast(e.message || "Error", "error");
+                                } finally {
+                                  setSending(false);
+                                }
+                              }}
+                            >
+                              <Check weight="bold" size={14} className="mr-1.5" />
+                              <span>Accept Invitation</span>
+                            </Button>
+
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              disabled={sending}
+                              onClick={async () => {
+                                setSending(true);
+                                try {
+                                  const res = await fetch("/api/projects/respond", {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({ projectId: invProjectId, action: "reject" }),
+                                  });
+                                  const d = await res.json();
+                                  if (d.success) {
+                                    showToast("Project invitation declined.");
+                                    loadMailData();
+                                  } else {
+                                    showToast(d.error || "Failed to decline", "error");
+                                  }
+                                } catch (e: any) {
+                                  showToast(e.message || "Error", "error");
+                                } finally {
+                                  setSending(false);
+                                }
+                              }}
+                            >
+                              <X weight="bold" size={14} className="mr-1.5 text-red-600" />
+                              <span>Decline</span>
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })()
+                  )}
 
                   {selectedMessage.type === "system" && (
                     <div className="rounded-lg border border-blue-500/20 bg-blue-50/50 dark:bg-blue-950/20 p-4 text-xs text-blue-800 dark:text-blue-300">

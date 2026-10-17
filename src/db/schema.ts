@@ -44,12 +44,25 @@ export const systemConfigs = pgTable("system_configs", {
 
 export const projects = pgTable("projects", {
   id: serial("id").primaryKey(),
-  name: varchar("name", { length: 255 }).notNull(),
+  name: varchar("name", { length: 255 }).notNull(), // Project title / หัวข้อโปรเจค
+  subjectName: varchar("subject_name", { length: 255 }).notNull(), // Course/Subject name / ชื่อวิชา
   description: text("description"),
-  status: varchar("status", { length: 50 }).notNull().default("active"),
+  creatorId: integer("creator_id").references(() => users.id, { onDelete: "cascade" }), // Student creator
+  advisorId: integer("advisor_id").references(() => users.id, { onDelete: "set null" }), // Advisor teacher
+  status: varchar("status", { length: 50 }).notNull().default("pending"), // pending, active, completed, rejected, archived
   tier: varchar("tier", { length: 50 }).notNull().default("standard"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const projectMembers = pgTable("project_members", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").references(() => projects.id, { onDelete: "cascade" }).notNull(),
+  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  role: varchar("role", { length: 50 }).notNull().default("member"), // leader, member, advisor
+  status: varchar("status", { length: 50 }).notNull().default("pending"), // pending, accepted, rejected
+  invitedAt: timestamp("invited_at").defaultNow().notNull(),
+  respondedAt: timestamp("responded_at"),
 });
 
 export const tasks = pgTable("tasks", {
@@ -84,6 +97,8 @@ export type SystemConfig = typeof systemConfigs.$inferSelect;
 export type NewSystemConfig = typeof systemConfigs.$inferInsert;
 export type Project = typeof projects.$inferSelect;
 export type NewProject = typeof projects.$inferInsert;
+export type ProjectMember = typeof projectMembers.$inferSelect;
+export type NewProjectMember = typeof projectMembers.$inferInsert;
 export type Task = typeof tasks.$inferSelect;
 export type NewTask = typeof tasks.$inferInsert;
 export type Message = typeof messages.$inferSelect;

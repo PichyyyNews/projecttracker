@@ -27,6 +27,8 @@ import {
   Lifebuoy,
   EnvelopeSimple,
   Check,
+  FolderOpen,
+  Kanban,
 } from "@phosphor-icons/react";
 import UserAvatar from "@/components/UserAvatar";
 import { USER_ROLES, ROLE_OPTIONS, UserRole } from "@/lib/roles";
@@ -89,7 +91,39 @@ interface TicketItem {
   };
 }
 
-type AdminSection = "users" | "tickets" | "academic" | "minio" | "google" | "overview" | "system";
+interface AdminProjectItem {
+  id: number;
+  name: string;
+  subjectName: string;
+  description?: string | null;
+  creatorId: number;
+  advisorId?: number | null;
+  status: string;
+  createdAt: string;
+  creator?: {
+    id: number;
+    name: string;
+    email: string;
+  };
+  advisor?: {
+    id: number;
+    name: string;
+    email: string;
+  } | null;
+  members?: Array<{
+    id: number;
+    userId: number;
+    role: string;
+    status: string;
+    user?: {
+      id: number;
+      name: string;
+      email: string;
+    };
+  }>;
+}
+
+type AdminSection = "users" | "projects" | "tickets" | "academic" | "minio" | "google" | "overview" | "system";
 
 export default function AdminPage() {
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
@@ -101,6 +135,7 @@ export default function AdminPage() {
   const [activeSection, setActiveSection] = useState<AdminSection>("users");
   const [usersList, setUsersList] = useState<AdminUser[]>([]);
   const [ticketsList, setTicketsList] = useState<TicketItem[]>([]);
+  const [projectsList, setProjectsList] = useState<AdminProjectItem[]>([]);
   const [googleConfig, setGoogleConfig] = useState<GoogleConfigData>({
     google_client_id: "",
     google_client_secret: "",
@@ -152,12 +187,13 @@ export default function AdminPage() {
 
   const loadAdminData = async () => {
     try {
-      const [uRes, gRes, mRes, aRes, tRes] = await Promise.all([
+      const [uRes, gRes, mRes, aRes, tRes, pRes] = await Promise.all([
         fetch("/api/admin/users"),
         fetch("/api/admin/google-config"),
         fetch("/api/admin/minio-config"),
         fetch("/api/admin/academic"),
         fetch("/api/admin/tickets"),
+        fetch("/api/admin/projects"),
       ]);
 
       if (uRes.ok) {
@@ -186,6 +222,11 @@ export default function AdminPage() {
       if (tRes.ok) {
         const tData = await tRes.json();
         if (tData.success) setTicketsList(tData.data);
+      }
+
+      if (pRes.ok) {
+        const pData = await pRes.json();
+        if (pData.success) setProjectsList(pData.data);
       }
     } catch (err) {
       console.error("Failed to load admin data", err);
@@ -553,6 +594,22 @@ export default function AdminPage() {
 
               <button
                 type="button"
+                onClick={() => { setActiveSection("projects"); setSaveMessage(null); }}
+                className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition-none ${
+                  activeSection === "projects"
+                    ? "bg-kumo-tint text-kumo-brand"
+                    : "text-kumo-default hover:bg-kumo-tint"
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <FolderOpen weight="thin" size={18} />
+                  <span>Projects control</span>
+                </div>
+                <Badge variant="neutral">{projectsList.length}</Badge>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => { setActiveSection("tickets"); setSaveMessage(null); }}
                 className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition-none ${
                   activeSection === "tickets"
@@ -700,6 +757,14 @@ export default function AdminPage() {
             Users ({usersList.length})
           </button>
           <button
+            onClick={() => setActiveSection("projects")}
+            className={`whitespace-nowrap px-3 py-2 text-xs font-medium border-b-2 ${
+              activeSection === "projects" ? "border-kumo-brand text-kumo-brand" : "border-transparent text-kumo-subtle"
+            }`}
+          >
+            Projects ({projectsList.length})
+          </button>
+          <button
             onClick={() => setActiveSection("tickets")}
             className={`whitespace-nowrap px-3 py-2 text-xs font-medium border-b-2 flex items-center gap-1.5 ${
               activeSection === "tickets" ? "border-kumo-brand text-kumo-brand" : "border-transparent text-kumo-subtle"
@@ -840,6 +905,157 @@ export default function AdminPage() {
                                 <Trash weight="thin" size={14} />
                               </Button>
                             </div>
+                          </Table.Cell>
+                        </Table.Row>
+                      ))
+                    )}
+                  </Table.Body>
+                </Table>
+              </LayerCard>
+            </div>
+          )}
+
+          {/* 1.25 PROJECTS MANAGEMENT & CONTROL VIEW */}
+          {activeSection === "projects" && (
+            <div className="grid gap-6">
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h1 className="text-xl font-semibold text-kumo-default">Projects management & control</h1>
+                  <p className="text-xs text-kumo-subtle">
+                    Full supervisory control over all academic projects, team compositions, and advisor approvals.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="neutral">Total Projects: {projectsList.length}</Badge>
+                  <Badge variant="success">Active: {projectsList.filter((p) => p.status === "active").length}</Badge>
+                </div>
+              </div>
+
+              <LayerCard className="overflow-hidden ring ring-kumo-line rounded-lg bg-kumo-base">
+                <Table>
+                  <Table.Header>
+                    <Table.Row>
+                      <Table.Head>Project Title & Course</Table.Head>
+                      <Table.Head>Leader / Creator</Table.Head>
+                      <Table.Head>Advisor</Table.Head>
+                      <Table.Head>Members</Table.Head>
+                      <Table.Head>Status</Table.Head>
+                      <Table.Head className="text-right">Actions</Table.Head>
+                    </Table.Row>
+                  </Table.Header>
+                  <Table.Body>
+                    {projectsList.length === 0 ? (
+                      <Table.Row>
+                        <Table.Cell colSpan={6} className="text-center py-10 text-xs text-kumo-subtle">
+                          No projects created yet across the platform.
+                        </Table.Cell>
+                      </Table.Row>
+                    ) : (
+                      projectsList.map((project) => (
+                        <Table.Row key={project.id}>
+                          {/* Project info */}
+                          <Table.Cell>
+                            <div className="min-w-0 max-w-[220px]">
+                              <span className="rounded bg-kumo-brand/10 px-1.5 py-0.2 text-[10px] font-medium text-kumo-brand">
+                                {project.subjectName}
+                              </span>
+                              <div className="font-medium text-xs text-kumo-default truncate mt-1">
+                                {project.name}
+                              </div>
+                              <div className="text-[10px] text-kumo-subtle">
+                                ID: #{project.id} &bull; {new Date(project.createdAt).toLocaleDateString()}
+                              </div>
+                            </div>
+                          </Table.Cell>
+
+                          {/* Creator */}
+                          <Table.Cell>
+                            <div className="text-xs font-medium text-kumo-default">
+                              {project.creator?.name || "Unknown"}
+                            </div>
+                            <div className="text-[10px] text-kumo-subtle">
+                              {project.creator?.email}
+                            </div>
+                          </Table.Cell>
+
+                          {/* Advisor */}
+                          <Table.Cell>
+                            {project.advisor ? (
+                              <div>
+                                <div className="text-xs font-medium text-kumo-default">{project.advisor.name}</div>
+                                <div className="text-[10px] text-kumo-subtle">{project.advisor.email}</div>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-kumo-subtle italic">Unassigned</span>
+                            )}
+                          </Table.Cell>
+
+                          {/* Members */}
+                          <Table.Cell>
+                            <div className="text-xs text-kumo-default">
+                              {project.members && project.members.length > 0 ? (
+                                <div className="flex flex-col gap-0.5">
+                                  <span>{project.members.length} collaborators</span>
+                                  <span className="text-[10px] text-kumo-subtle">
+                                    {project.members.filter((m) => m.status === "accepted").length} accepted
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-kumo-subtle italic">None</span>
+                              )}
+                            </div>
+                          </Table.Cell>
+
+                          {/* Status changer */}
+                          <Table.Cell>
+                            <select
+                              value={project.status}
+                              onChange={async (e) => {
+                                const newStatus = e.target.value;
+                                try {
+                                  const res = await fetch("/api/admin/projects", {
+                                    method: "PATCH",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({ id: project.id, status: newStatus }),
+                                  });
+                                  if (res.ok) {
+                                    setProjectsList((prev) =>
+                                      prev.map((p) => (p.id === project.id ? { ...p, status: newStatus } : p))
+                                    );
+                                  }
+                                } catch (err) {
+                                  alert("Failed to update project status");
+                                }
+                              }}
+                              className="rounded border border-kumo-line bg-kumo-control px-2 py-1 text-xs text-kumo-default focus:border-kumo-brand focus:outline-none"
+                            >
+                              <option value="pending">Pending</option>
+                              <option value="active">Active</option>
+                              <option value="completed">Completed</option>
+                              <option value="rejected">Rejected</option>
+                              <option value="archived">Archived</option>
+                            </select>
+                          </Table.Cell>
+
+                          {/* Delete */}
+                          <Table.Cell className="text-right">
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={async () => {
+                                if (!confirm(`Delete project "${project.name}" permanently?`)) return;
+                                try {
+                                  const res = await fetch(`/api/admin/projects?id=${project.id}`, { method: "DELETE" });
+                                  if (res.ok) {
+                                    setProjectsList((prev) => prev.filter((p) => p.id !== project.id));
+                                  }
+                                } catch (err) {
+                                  alert("Failed to delete project");
+                                }
+                              }}
+                            >
+                              <Trash weight="thin" size={14} />
+                            </Button>
                           </Table.Cell>
                         </Table.Row>
                       ))

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -9,14 +9,22 @@ import {
   Badge,
 } from "@cloudflare/kumo";
 import {
-  Kanban,
-  SignOut,
   Plus,
   FolderOpen,
-  CaretDown,
   User,
-  EnvelopeSimple,
-  Gear,
+  Users,
+  GraduationCap,
+  BookBookmark,
+  CheckCircle,
+  WarningCircle,
+  X,
+  MagnifyingGlass,
+  Check,
+  CaretDown,
+  ArrowRight,
+  Sparkle,
+  Kanban,
+  Clock,
 } from "@phosphor-icons/react";
 import UserAvatar from "@/components/UserAvatar";
 import AppNavbar from "@/components/AppNavbar";
@@ -30,37 +38,164 @@ interface UserSession {
   avatarUrl?: string | null;
 }
 
+interface ProjectUser {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+  avatarUrl?: string | null;
+  department?: string | null;
+}
+
+interface ProjectMemberItem {
+  id: number;
+  projectId: number;
+  userId: number;
+  role: string;
+  status: string;
+  user: ProjectUser;
+}
+
+interface ProjectItem {
+  id: number;
+  name: string;
+  subjectName: string;
+  description?: string | null;
+  creatorId: number;
+  advisorId?: number | null;
+  status: string;
+  tier: string;
+  createdAt: string;
+  creator: ProjectUser;
+  advisor?: ProjectUser | null;
+  members: ProjectMemberItem[];
+}
+
 export default function HomePage() {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<UserSession | null>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  const [projectsList, setProjectsList] = useState<ProjectItem[]>([]);
+  const [contactsList, setContactsList] = useState<ProjectUser[]>([]);
+  const [loadingProjects, setLoadingProjects] = useState(true);
+
+  // Create Project Modal State
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [projectName, setProjectName] = useState("");
+  const [subjectName, setSubjectName] = useState("");
+  const [projectDescription, setProjectDescription] = useState("");
+  const [selectedMemberIds, setSelectedMemberIds] = useState<number[]>([]);
+  const [selectedAdvisorId, setSelectedAdvisorId] = useState<number | null>(null);
+  const [createLoading, setCreateLoading] = useState(false);
+
+  // Search & Filter within Create Modal
+  const [memberSearch, setMemberSearch] = useState("");
+  const [isMemberDropdownOpen, setIsMemberDropdownOpen] = useState(false);
+  const [advisorSearch, setAdvisorSearch] = useState("");
+  const [isAdvisorDropdownOpen, setIsAdvisorDropdownOpen] = useState(false);
+
+  // Toast
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastType, setToastType] = useState<"success" | "error">("success");
+
+  const showToast = (msg: string, type: "success" | "error" = "success") => {
+    setToastMessage(msg);
+    setToastType(type);
+    setTimeout(() => setToastMessage(null), 4000);
+  };
 
   useEffect(() => {
-    async function checkSession() {
+    async function init() {
       try {
-        const res = await fetch("/api/auth/me");
-        const data = await res.json();
-        if (data.authenticated && data.user) {
-          setCurrentUser(data.user);
+        const [meRes, pRes, uRes] = await Promise.all([
+          fetch("/api/auth/me"),
+          fetch("/api/projects"),
+          fetch("/api/users"),
+        ]);
+
+        const meData = await meRes.json();
+        if (meData.authenticated && meData.user) {
+          setCurrentUser(meData.user);
         } else {
           router.replace("/login");
           return;
         }
+
+        if (pRes.ok) {
+          const pData = await pRes.json();
+          if (pData.success) setProjectsList(pData.data);
+        }
+
+        if (uRes.ok) {
+          const uData = await uRes.json();
+          if (uData.success) setContactsList(uData.data);
+        }
       } catch (err) {
         router.replace("/login");
-        return;
       } finally {
         setCheckingAuth(false);
+        setLoadingProjects(false);
       }
     }
-    checkSession();
+    init();
   }, [router]);
 
-  const handleLogout = async () => {
-    await fetch("/api/auth/me", { method: "POST" });
-    router.replace("/login");
+  const refreshProjects = async () => {
+    try {
+      const res = await fetch("/api/projects");
+      const data = await res.json();
+      if (data.success) setProjectsList(data.data);
+    } catch (err) {
+      // ignore
+    }
   };
+
+  const handleCreateProject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!projectName.trim() || !subjectName.trim()) return;
+
+    setCreateLoading(true);
+    try {
+      const res = await fetch("/api/projects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: projectName.trim(),
+          subjectName: subjectName.trim(),
+          description: projectDescription.trim() || null,
+          memberIds: selectedMemberIds,
+          advisorId: selectedAdvisorId,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to create project");
+      }
+
+      showToast("Project created successfully! Invitations sent to members & advisor.");
+      setIsCreateOpen(false);
+      setProjectName("");
+      setSubjectName("");
+      setProjectDescription("");
+      setSelectedMemberIds([]);
+      setSelectedAdvisorId(null);
+      refreshProjects();
+    } catch (err: any) {
+      showToast(err.message || "Failed to create project", "error");
+    } finally {
+      setCreateLoading(false);
+    }
+  };
+
+  const studentCandidates = contactsList.filter(
+    (u) => u.id !== currentUser?.id && u.role === "student"
+  );
+
+  const advisorCandidates = contactsList.filter(
+    (u) => u.role === "advisor" || u.role === "instructor" || u.role === "admin"
+  );
 
   if (checkingAuth) {
     return (
@@ -75,34 +210,472 @@ export default function HomePage() {
       {/* Top Navbar */}
       <AppNavbar currentUser={currentUser} subtitle="Workspace" />
 
-      {/* Main Content Area: Clean / Empty State as requested */}
-      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col items-center justify-center px-4 py-12 sm:px-6">
-        <div className="w-full max-w-md text-center -translate-y-[10vh]">
-          <LayerCard className="p-8 ring ring-kumo-line">
-            <div className="mb-4 flex flex-col items-center justify-center">
-              <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-kumo-control ring ring-kumo-line text-kumo-subtle">
-                <FolderOpen weight="thin" size={32} />
-              </div>
-              <h2 className="text-lg font-semibold tracking-tight text-kumo-default">
-                No projects yet
-              </h2>
-              <p className="mt-2 text-sm text-kumo-subtle leading-relaxed max-w-xs">
-                Your workspace is empty and ready. Start by creating your first project to track progress.
-              </p>
-            </div>
+      {/* Main Content Area */}
+      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-8 sm:px-6">
+        {/* Workspace Action Bar */}
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-xl font-semibold text-kumo-default">Projects & Workspace</h1>
+            <p className="text-xs text-kumo-subtle mt-0.5">
+              Manage your academic capstone projects, teammates, and advisor reviews.
+            </p>
+          </div>
 
-            <div className="mt-6 flex justify-center">
-              <Button variant="primary" className="inline-flex items-center justify-center">
-                <Plus weight="thin" size={16} className="mr-1.5" />
-                <span>Create your first project</span>
-              </Button>
-            </div>
-          </LayerCard>
+          <Button
+            variant="primary"
+            onClick={() => setIsCreateOpen(true)}
+            className="self-start sm:self-auto"
+          >
+            <Plus weight="thin" size={16} className="mr-1.5" />
+            <span>Create new project</span>
+          </Button>
         </div>
+
+        {/* Projects Grid or Empty State */}
+        {loadingProjects ? (
+          <div className="flex h-64 items-center justify-center">
+            <span className="text-xs text-kumo-subtle">Loading workspace projects...</span>
+          </div>
+        ) : projectsList.length === 0 ? (
+          <div className="flex flex-1 flex-col items-center justify-center py-16">
+            <div className="w-full max-w-md text-center">
+              <LayerCard className="p-8 ring ring-kumo-line rounded-xl bg-kumo-base">
+                <div className="mb-4 flex flex-col items-center justify-center">
+                  <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-kumo-control ring ring-kumo-line text-kumo-subtle">
+                    <FolderOpen weight="thin" size={32} />
+                  </div>
+                  <h2 className="text-lg font-semibold tracking-tight text-kumo-default">
+                    No projects yet
+                  </h2>
+                  <p className="mt-2 text-xs text-kumo-subtle leading-relaxed max-w-xs">
+                    Your workspace is ready. Set up your project name, course subject, and invite members and advisors.
+                  </p>
+                </div>
+
+                <div className="mt-6 flex justify-center">
+                  <Button variant="primary" onClick={() => setIsCreateOpen(true)}>
+                    <Plus weight="thin" size={16} className="mr-1.5" />
+                    <span>Create your first project</span>
+                  </Button>
+                </div>
+              </LayerCard>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+            {projectsList.map((project) => (
+              <LayerCard
+                key={project.id}
+                className="flex flex-col justify-between p-5 ring ring-kumo-line rounded-xl bg-kumo-base hover:border-kumo-brand/60 transition-colors shadow-sm"
+              >
+                <div>
+                  <div className="flex items-start justify-between gap-2 border-b border-kumo-line pb-3">
+                    <div className="min-w-0">
+                      <span className="rounded bg-kumo-brand/10 px-2 py-0.5 text-[10px] font-medium text-kumo-brand">
+                        {project.subjectName}
+                      </span>
+                      <h3 className="mt-2 text-base font-semibold text-kumo-default truncate">
+                        {project.name}
+                      </h3>
+                    </div>
+                    <Badge
+                      variant={
+                        project.status === "active"
+                          ? "success"
+                          : project.status === "completed"
+                          ? "primary"
+                          : project.status === "rejected"
+                          ? "destructive"
+                          : "warning"
+                      }
+                    >
+                      {project.status}
+                    </Badge>
+                  </div>
+
+                  {project.description && (
+                    <p className="mt-3 line-clamp-2 text-xs text-kumo-subtle leading-relaxed">
+                      {project.description}
+                    </p>
+                  )}
+
+                  {/* Advisor */}
+                  <div className="mt-4 flex items-center justify-between text-xs">
+                    <span className="text-kumo-subtle">Advisor:</span>
+                    {project.advisor ? (
+                      <div className="flex items-center gap-1.5">
+                        <UserAvatar
+                          src={project.advisor.avatarUrl || null}
+                          name={project.advisor.name}
+                          size={20}
+                        />
+                        <span className="font-medium text-kumo-default truncate max-w-[130px]">
+                          {project.advisor.name}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-kumo-subtle italic">Unassigned</span>
+                    )}
+                  </div>
+
+                  {/* Members Avatars Stack */}
+                  <div className="mt-3 flex items-center justify-between text-xs">
+                    <span className="text-kumo-subtle">Members:</span>
+                    <div className="flex items-center -space-x-1.5 overflow-hidden">
+                      {project.members && project.members.length > 0 ? (
+                        project.members.map((m) => (
+                          <div key={m.id} title={`${m.user?.name} (${m.status})`}>
+                            <UserAvatar
+                              src={m.user?.avatarUrl || null}
+                              name={m.user?.name}
+                              size={22}
+                              className={`rounded-full ring-2 ring-kumo-base ${
+                                m.status === "pending"
+                                  ? "opacity-60 grayscale"
+                                  : m.status === "rejected"
+                                  ? "opacity-30"
+                                  : ""
+                              }`}
+                            />
+                          </div>
+                        ))
+                      ) : (
+                        <span className="text-kumo-subtle italic">Solo</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-5 pt-3 border-t border-kumo-line flex items-center justify-between text-xs text-kumo-subtle">
+                  <span>Created {new Date(project.createdAt).toLocaleDateString()}</span>
+                  <span className="text-kumo-brand font-medium flex items-center gap-1 hover:underline cursor-pointer">
+                    View project <ArrowRight weight="thin" size={12} />
+                  </span>
+                </div>
+              </LayerCard>
+            ))}
+          </div>
+        )}
       </main>
 
+      {/* Create Project Modal */}
+      {isCreateOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 overflow-y-auto">
+          <div className="w-full max-w-lg rounded-xl border border-kumo-line bg-kumo-base p-6 shadow-xl space-y-5 my-8">
+            <div className="flex items-center justify-between border-b border-kumo-line pb-3">
+              <div>
+                <h3 className="text-sm font-semibold text-kumo-default">Create new project</h3>
+                <p className="text-xs text-kumo-subtle mt-0.5">
+                  Invitations will be automatically sent to members and advisor for confirmation.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsCreateOpen(false)}
+                className="text-kumo-subtle hover:text-kumo-default"
+              >
+                <X weight="thin" size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateProject} className="space-y-4">
+              {/* Project Title */}
+              <div className="grid gap-1.5">
+                <label className="text-xs font-medium text-kumo-default">Project title (หัวข้อโปรเจค)</label>
+                <input
+                  type="text"
+                  required
+                  value={projectName}
+                  onChange={(e) => setProjectName(e.target.value)}
+                  placeholder="e.g. AI-Powered Smart Agriculture Monitoring System"
+                  className="w-full rounded-md border border-kumo-line bg-kumo-control py-2 px-3 text-xs text-kumo-default placeholder:text-kumo-subtle focus:border-kumo-brand focus:outline-none"
+                />
+              </div>
+
+              {/* Subject / Course Name */}
+              <div className="grid gap-1.5">
+                <label className="text-xs font-medium text-kumo-default">Course name (ชื่อวิชา)</label>
+                <input
+                  type="text"
+                  required
+                  value={subjectName}
+                  onChange={(e) => setSubjectName(e.target.value)}
+                  placeholder="e.g. โครงงานเทคโนโลยีคอมพิวเตอร์ 1 (Computer Technology Project I)"
+                  className="w-full rounded-md border border-kumo-line bg-kumo-control py-2 px-3 text-xs text-kumo-default placeholder:text-kumo-subtle focus:border-kumo-brand focus:outline-none"
+                />
+              </div>
+
+              {/* Description */}
+              <div className="grid gap-1.5">
+                <label className="text-xs font-medium text-kumo-default">Description (รายละเอียด)</label>
+                <textarea
+                  rows={3}
+                  value={projectDescription}
+                  onChange={(e) => setProjectDescription(e.target.value)}
+                  placeholder="Summary of project objectives, scope, and technologies..."
+                  className="w-full rounded-md border border-kumo-line bg-kumo-control p-3 text-xs text-kumo-default placeholder:text-kumo-subtle focus:border-kumo-brand focus:outline-none resize-none"
+                />
+              </div>
+
+              {/* Advisor Selection (Dropdown & Role Filtering) */}
+              <div className="grid gap-1.5 relative">
+                <label className="text-xs font-medium text-kumo-default">
+                  Project advisor (อาจารย์ที่ปรึกษา)
+                </label>
+
+                {/* Unified Advisor Box */}
+                <div
+                  onClick={() => setIsAdvisorDropdownOpen(true)}
+                  className="flex items-center gap-2 rounded-md border border-kumo-line bg-kumo-control px-2.5 py-1.5 text-xs cursor-pointer"
+                >
+                  {selectedAdvisorId ? (
+                    (() => {
+                      const adv = contactsList.find((u) => u.id === selectedAdvisorId);
+                      return adv ? (
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <UserAvatar src={adv.avatarUrl || null} name={adv.name} size={22} />
+                          <span className="font-semibold text-kumo-default truncate">{adv.name}</span>
+                          <span className="text-[11px] text-kumo-subtle">({adv.email})</span>
+                          <Badge variant="primary" className="shrink-0">
+                            {USER_ROLES[adv.role as UserRole]?.label || adv.role}
+                          </Badge>
+                        </div>
+                      ) : null;
+                    })()
+                  ) : (
+                    <div className="flex items-center gap-2 flex-1 text-kumo-subtle">
+                      <GraduationCap weight="thin" size={16} />
+                      <span>Select advisor from instructors or advisors list...</span>
+                    </div>
+                  )}
+
+                  {selectedAdvisorId && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedAdvisorId(null);
+                      }}
+                      className="text-kumo-subtle hover:text-red-500"
+                    >
+                      <X weight="bold" size={12} />
+                    </button>
+                  )}
+
+                  <CaretDown weight="thin" size={14} className="text-kumo-subtle" />
+                </div>
+
+                {/* Advisor Dropdown Options */}
+                {isAdvisorDropdownOpen && (
+                  <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-52 overflow-y-auto rounded-md border border-kumo-line bg-kumo-base shadow-xl ring-1 ring-black/5 divide-y divide-kumo-line">
+                    <div className="p-2 border-b border-kumo-line bg-kumo-control/30">
+                      <input
+                        type="text"
+                        value={advisorSearch}
+                        onChange={(e) => setAdvisorSearch(e.target.value)}
+                        placeholder="Search advisor by name..."
+                        className="w-full rounded border border-kumo-line bg-kumo-base py-1 px-2 text-xs text-kumo-default placeholder:text-kumo-subtle focus:border-kumo-brand focus:outline-none"
+                      />
+                    </div>
+
+                    {advisorCandidates
+                      .filter((u) => {
+                        if (!advisorSearch.trim()) return true;
+                        return u.name.toLowerCase().includes(advisorSearch.toLowerCase()) ||
+                          u.email.toLowerCase().includes(advisorSearch.toLowerCase());
+                      })
+                      .map((adv) => {
+                        const isSelected = selectedAdvisorId === adv.id;
+                        return (
+                          <div
+                            key={adv.id}
+                            onClick={() => {
+                              setSelectedAdvisorId(adv.id);
+                              setIsAdvisorDropdownOpen(false);
+                            }}
+                            className={`flex items-center justify-between p-2.5 cursor-pointer text-xs transition-colors ${
+                              isSelected ? "bg-kumo-tint font-medium" : "hover:bg-kumo-tint/60"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <UserAvatar src={adv.avatarUrl || null} name={adv.name} size={24} />
+                              <div className="min-w-0">
+                                <span className="font-semibold text-kumo-default truncate block">{adv.name}</span>
+                                <span className="text-[11px] text-kumo-subtle truncate block">{adv.email}</span>
+                              </div>
+                            </div>
+                            <Badge variant={USER_ROLES[adv.role as UserRole]?.badgeVariant || "neutral"}>
+                              {USER_ROLES[adv.role as UserRole]?.label || adv.role}
+                            </Badge>
+                          </div>
+                        );
+                      })}
+                  </div>
+                )}
+              </div>
+
+              {/* Members Selection (Student Teammates) */}
+              <div className="grid gap-1.5 relative">
+                <label className="text-xs font-medium text-kumo-default">
+                  Project members (สมาชิกกลุ่ม)
+                </label>
+
+                {/* Selected Members Chips */}
+                <div className="flex flex-wrap gap-1.5 mb-1">
+                  {/* Current User is always Leader */}
+                  <div className="flex items-center gap-1.5 rounded-full border border-kumo-brand/30 bg-kumo-brand/10 py-0.5 pl-1.5 pr-2.5 text-xs font-medium text-kumo-brand">
+                    <UserAvatar src={currentUser?.avatarUrl || null} name={currentUser?.name} size={16} />
+                    <span>{currentUser?.name}</span>
+                    <span className="text-[10px] text-kumo-brand/80 font-normal">(Leader)</span>
+                  </div>
+
+                  {selectedMemberIds.map((mId) => {
+                    const memberUser = contactsList.find((u) => u.id === mId);
+                    if (!memberUser) return null;
+                    return (
+                      <div
+                        key={mId}
+                        className="flex items-center gap-1.5 rounded-full border border-kumo-line bg-kumo-control py-0.5 pl-1.5 pr-2 text-xs font-medium text-kumo-default"
+                      >
+                        <UserAvatar src={memberUser.avatarUrl || null} name={memberUser.name} size={16} />
+                        <span>{memberUser.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedMemberIds(selectedMemberIds.filter((id) => id !== mId))}
+                          className="text-kumo-subtle hover:text-red-500 ml-0.5"
+                        >
+                          <X weight="bold" size={11} />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Add Teammate Trigger */}
+                <div
+                  onClick={() => setIsMemberDropdownOpen(true)}
+                  className="flex items-center justify-between rounded-md border border-kumo-line bg-kumo-control px-2.5 py-1.5 text-xs cursor-pointer text-kumo-subtle hover:text-kumo-default"
+                >
+                  <div className="flex items-center gap-2">
+                    <Users weight="thin" size={16} />
+                    <span>Click to search and add student teammates...</span>
+                  </div>
+                  <CaretDown weight="thin" size={14} />
+                </div>
+
+                {/* Teammates Dropdown */}
+                {isMemberDropdownOpen && (
+                  <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-52 overflow-y-auto rounded-md border border-kumo-line bg-kumo-base shadow-xl ring-1 ring-black/5 divide-y divide-kumo-line">
+                    <div className="p-2 border-b border-kumo-line bg-kumo-control/30 flex items-center justify-between">
+                      <input
+                        type="text"
+                        value={memberSearch}
+                        onChange={(e) => setMemberSearch(e.target.value)}
+                        placeholder="Search student by name or email..."
+                        className="w-full rounded border border-kumo-line bg-kumo-base py-1 px-2 text-xs text-kumo-default placeholder:text-kumo-subtle focus:border-kumo-brand focus:outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setIsMemberDropdownOpen(false)}
+                        className="text-kumo-subtle hover:text-kumo-default ml-2"
+                      >
+                        <X weight="thin" size={14} />
+                      </button>
+                    </div>
+
+                    {studentCandidates
+                      .filter((u) => {
+                        if (!memberSearch.trim()) return true;
+                        return u.name.toLowerCase().includes(memberSearch.toLowerCase()) ||
+                          u.email.toLowerCase().includes(memberSearch.toLowerCase());
+                      })
+                      .map((stu) => {
+                        const isSelected = selectedMemberIds.includes(stu.id);
+                        return (
+                          <div
+                            key={stu.id}
+                            onClick={() => {
+                              if (isSelected) {
+                                setSelectedMemberIds(selectedMemberIds.filter((id) => id !== stu.id));
+                              } else {
+                                setSelectedMemberIds([...selectedMemberIds, stu.id]);
+                              }
+                            }}
+                            className={`flex items-center justify-between p-2.5 cursor-pointer text-xs transition-colors ${
+                              isSelected ? "bg-kumo-tint font-medium" : "hover:bg-kumo-tint/60"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <UserAvatar src={stu.avatarUrl || null} name={stu.name} size={24} />
+                              <div className="min-w-0">
+                                <span className="font-semibold text-kumo-default truncate block">{stu.name}</span>
+                                <span className="text-[11px] text-kumo-subtle truncate block">{stu.email}</span>
+                              </div>
+                            </div>
+                            {isSelected ? (
+                              <Check weight="bold" size={14} className="text-kumo-brand" />
+                            ) : (
+                              <Plus weight="thin" size={14} className="text-kumo-subtle" />
+                            )}
+                          </div>
+                        );
+                      })}
+                  </div>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-end gap-2 pt-3 border-t border-kumo-line">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  type="button"
+                  onClick={() => setIsCreateOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button variant="primary" size="sm" type="submit" disabled={createLoading}>
+                  <Plus weight="thin" size={14} className="mr-1.5" />
+                  <span>{createLoading ? "Creating project..." : "Create project"}</span>
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Floating Responsive Toast Notification */}
+      {toastMessage && (
+        <aside
+          role="status"
+          className="fixed z-50 transition-all duration-300 ease-out top-4 left-4 right-4 sm:top-auto sm:left-auto sm:bottom-6 sm:right-6 sm:w-auto"
+        >
+          <div
+            className={`flex items-center gap-2.5 rounded-lg border backdrop-blur-md px-4 py-2.5 text-xs font-medium shadow-lg ring-1 ring-black/5 ${
+              toastType === "success"
+                ? "border-green-500/30 bg-green-500/10 text-green-700 dark:text-green-300 dark:bg-green-950/80"
+                : "border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-300 dark:bg-red-950/80"
+            }`}
+          >
+            {toastType === "success" ? (
+              <CheckCircle weight="fill" size={18} className="text-green-600 dark:text-green-400 shrink-0" />
+            ) : (
+              <WarningCircle weight="fill" size={18} className="text-red-600 dark:text-red-400 shrink-0" />
+            )}
+            <span className="truncate">{toastMessage}</span>
+            <button
+              type="button"
+              onClick={() => setToastMessage(null)}
+              className="ml-2 opacity-70 hover:opacity-100"
+            >
+              <X weight="bold" size={14} />
+            </button>
+          </div>
+        </aside>
+      )}
+
       {/* Footer */}
-      <footer className="border-t border-kumo-line bg-kumo-base px-6 py-4">
+      <footer className="border-t border-kumo-line bg-kumo-base px-6 py-4 mt-auto">
         <div className="mx-auto flex max-w-6xl items-center justify-between text-xs text-kumo-subtle">
           <div>Project Tracker Workspace</div>
           <div>Cloudflare Kumo UI &bull; PostgreSQL</div>
