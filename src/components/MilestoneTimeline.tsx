@@ -269,10 +269,10 @@ export const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({
       {/* 1. HORIZONTAL TIMELINE & PROJECT HEADER IN ONE CARD */}
       <LayerCard className="p-4 sm:p-5 ring ring-kumo-line rounded-xl bg-kumo-base shadow-xs">
         {projectInfo && (
-          <div className="flex flex-col gap-3 border-b border-kumo-line pb-4 mb-4">
+          <div className="flex flex-col gap-2.5 border-b border-kumo-line pb-3.5 mb-3 sm:mb-4">
             {/* Top row: Back button + Subject & Project Name on Left, Advisor & Members on Right */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
-              <div className="flex items-center gap-2 min-w-0">
+            <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0 flex-1">
                 {onBack && (
                   <button
                     type="button"
@@ -286,27 +286,27 @@ export const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({
                 <span className="rounded bg-kumo-brand/10 px-2 py-0.5 text-[10px] font-medium text-kumo-brand shrink-0">
                   {projectInfo.subjectName}
                 </span>
-                <h1 className="text-base font-bold text-kumo-default truncate">{projectInfo.name}</h1>
+                <h1 className="text-sm sm:text-base font-bold text-kumo-default truncate">{projectInfo.name}</h1>
               </div>
 
               {/* Advisor & Members Row */}
-              <div className="flex items-center justify-between sm:justify-end gap-3 text-xs pt-1 sm:pt-0">
+              <div className="flex items-center gap-2.5 text-xs shrink-0">
                 {projectInfo.advisor && (
                   <div className="flex items-center gap-1.5 shrink-0">
-                    <span className="text-[11px] text-kumo-subtle">Advisor:</span>
+                    <span className="text-[11px] text-kumo-subtle hidden xs:inline">Advisor:</span>
                     <UserAvatar
                       src={projectInfo.advisor.avatarUrl}
                       name={projectInfo.advisor.name}
                       size={20}
                     />
-                    <span className="font-semibold text-kumo-default text-xs">
+                    <span className="font-semibold text-kumo-default text-xs max-w-[100px] sm:max-w-none truncate">
                       {projectInfo.advisor.name}
                     </span>
                   </div>
                 )}
                 {projectInfo.members && projectInfo.members.length > 0 && (
                   <div className="flex items-center gap-1.5 shrink-0 pl-2 border-l border-kumo-line">
-                    <span className="text-[11px] text-kumo-subtle">Members:</span>
+                    <span className="text-[11px] text-kumo-subtle hidden xs:inline">Members:</span>
                     <div className="flex items-center -space-x-1.5">
                       {projectInfo.members.map((m) => (
                         <UserAvatar
@@ -322,29 +322,30 @@ export const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({
               </div>
             </div>
 
-            {projectInfo.description && (
-              <p className="text-xs text-kumo-subtle line-clamp-2">{projectInfo.description}</p>
+            {/* Project description: Only show if distinct from title, and hide on very small mobile to save vertical space */}
+            {projectInfo.description && projectInfo.description.trim() !== projectInfo.name.trim() && (
+              <p className="text-xs text-kumo-subtle line-clamp-2 hidden sm:block">{projectInfo.description}</p>
             )}
           </div>
         )}
 
-        <div className="flex flex-col xs:flex-row xs:items-center justify-between gap-2 mb-4">
+        <div className="flex items-center justify-between gap-2 mb-3">
           <div>
-            <h3 className="text-sm font-semibold text-kumo-default">Project milestone timeline</h3>
-            <p className="text-xs text-kumo-subtle">Sequential track progression from 0% to 100% completion</p>
+            <h3 className="text-sm font-semibold text-kumo-default">Milestone track</h3>
+            <p className="text-xs text-kumo-subtle hidden sm:block">Sequential progression from 0% to 100% completion</p>
           </div>
-          <div className="flex items-center gap-2 self-start xs:self-auto">
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-kumo-control text-kumo-default border border-kumo-line">
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] sm:text-xs font-medium bg-kumo-control text-kumo-default border border-kumo-line">
               <span className="text-kumo-brand font-semibold mr-1">
-                {milestones.filter((m) => m.status === "approved").length} of {milestones.length}
-              </span>{" "}
-              Milestones completed
+                {milestones.filter((m) => m.status === "approved").length}/{milestones.length}
+              </span>
+              <span>passed</span>
             </span>
           </div>
         </div>
 
         {/* Timeline Bar Track */}
-        <div className="relative py-4 px-2 sm:px-4">
+        <div className="relative py-2 sm:py-4 px-1 sm:px-4">
           {(() => {
             // Calculate overall progress along the track (0% to 100%)
             let overallTrackPercent = 0;
@@ -385,14 +386,14 @@ export const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({
                 />
 
                 {/* 0% Origin Node */}
-                <div className="relative z-10 flex flex-col items-center w-14 sm:w-20">
+                <div className="relative z-10 flex flex-col items-center w-12 sm:w-20">
                   <div className="rounded-full bg-kumo-base p-1 ring-2 ring-emerald-500/20 shadow-xs">
                     <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400">
                       <CheckCircle weight="fill" size={16} />
                     </div>
                   </div>
                   <span className="mt-1.5 text-[11px] sm:text-xs font-semibold text-kumo-default">0%</span>
-                  <span className="text-[10px] text-kumo-subtle truncate text-center">Kickoff</span>
+                  <span className="text-[10px] text-kumo-subtle text-center">Kickoff</span>
                 </div>
 
             {/* Milestone Nodes (25%, 50%, 75%, 100%) */}
@@ -429,7 +430,7 @@ export const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({
                 <div
                   key={m.id}
                   onClick={() => setSelectedMilestone(m)}
-                  className="relative z-10 flex flex-col items-center cursor-pointer group w-14 sm:w-20"
+                  className="relative z-10 flex flex-col items-center cursor-pointer group w-12 sm:w-20"
                 >
                   <div
                     className={`rounded-full bg-kumo-base p-1 ring-2 transition-all shadow-xs ${ringColor}`}
@@ -455,9 +456,9 @@ export const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({
                       : m.status === "needs_revision"
                       ? "Revision"
                       : m.totalTasks && m.totalTasks > 0
-                      ? `${m.completedTasks}/${m.totalTasks} jobs (${m.taskPercentage}%)`
+                      ? `${m.completedTasks}/${m.totalTasks} jobs`
                       : m.status === "in_progress"
-                      ? "In progress"
+                      ? "Active"
                       : "Locked"}
                   </span>
                 </div>
