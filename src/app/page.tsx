@@ -286,19 +286,29 @@ export default function HomePage() {
                         {project.name}
                       </h3>
                     </div>
-                    <Badge
-                      variant={
+                    {/* Status Icon Badge */}
+                    <div
+                      title={`Status: ${project.status}`}
+                      className={`flex h-6 w-6 items-center justify-center rounded-full transition-colors ${
                         project.status === "active"
-                          ? "success"
+                          ? "bg-green-500/10 text-green-600 dark:text-green-400"
                           : project.status === "completed"
-                          ? "primary"
+                          ? "bg-blue-500/10 text-blue-600 dark:text-blue-400"
                           : project.status === "rejected"
-                          ? "destructive"
-                          : "warning"
-                      }
+                          ? "bg-red-500/10 text-red-600 dark:text-red-400"
+                          : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                      }`}
                     >
-                      {project.status}
-                    </Badge>
+                      {project.status === "active" ? (
+                        <CheckCircle weight="fill" size={15} />
+                      ) : project.status === "completed" ? (
+                        <Sparkle weight="fill" size={15} />
+                      ) : project.status === "rejected" ? (
+                        <WarningCircle weight="fill" size={15} />
+                      ) : (
+                        <Clock weight="fill" size={15} />
+                      )}
+                    </div>
                   </div>
 
                   {project.description && (
