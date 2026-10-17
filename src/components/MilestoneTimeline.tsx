@@ -266,49 +266,52 @@ export const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({
       {/* 1. HORIZONTAL TIMELINE & PROJECT HEADER IN ONE CARD */}
       <LayerCard className="p-4 sm:p-5 ring ring-kumo-line rounded-xl bg-kumo-base shadow-xs">
         {projectInfo && (
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-kumo-line pb-4 mb-4">
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex flex-col gap-3 border-b border-kumo-line pb-4 mb-4">
+            {/* Top row: Subject & Project Name on Left, Advisor & Members on Right */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
+              <div className="flex items-center gap-2 min-w-0">
                 <span className="rounded bg-kumo-brand/10 px-2 py-0.5 text-[10px] font-medium text-kumo-brand shrink-0">
                   {projectInfo.subjectName}
                 </span>
                 <h1 className="text-base font-bold text-kumo-default truncate">{projectInfo.name}</h1>
               </div>
-              {projectInfo.description && (
-                <p className="mt-1 text-xs text-kumo-subtle line-clamp-2">{projectInfo.description}</p>
-              )}
+
+              {/* Advisor & Members Row */}
+              <div className="flex items-center justify-between sm:justify-end gap-3 text-xs pt-1 sm:pt-0">
+                {projectInfo.advisor && (
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className="text-[11px] text-kumo-subtle">Advisor:</span>
+                    <UserAvatar
+                      src={projectInfo.advisor.avatarUrl}
+                      name={projectInfo.advisor.name}
+                      size={20}
+                    />
+                    <span className="font-semibold text-kumo-default text-xs">
+                      {projectInfo.advisor.name}
+                    </span>
+                  </div>
+                )}
+                {projectInfo.members && projectInfo.members.length > 0 && (
+                  <div className="flex items-center gap-1.5 shrink-0 pl-2 border-l border-kumo-line">
+                    <span className="text-[11px] text-kumo-subtle">Members:</span>
+                    <div className="flex items-center -space-x-1.5">
+                      {projectInfo.members.map((m) => (
+                        <UserAvatar
+                          key={m.id}
+                          src={m.user?.avatarUrl}
+                          name={m.user?.name}
+                          size={20}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="flex items-center gap-4 text-xs flex-wrap sm:flex-nowrap">
-              {projectInfo.advisor && (
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <span className="text-kumo-subtle">Advisor:</span>
-                  <UserAvatar
-                    src={projectInfo.advisor.avatarUrl}
-                    name={projectInfo.advisor.name}
-                    size={20}
-                  />
-                  <span className="font-semibold text-kumo-default truncate max-w-[120px] sm:max-w-none">
-                    {projectInfo.advisor.name}
-                  </span>
-                </div>
-              )}
-              {projectInfo.members && projectInfo.members.length > 0 && (
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <span className="text-kumo-subtle">Members:</span>
-                  <div className="flex items-center -space-x-1.5">
-                    {projectInfo.members.map((m) => (
-                      <UserAvatar
-                        key={m.id}
-                        src={m.user?.avatarUrl}
-                        name={m.user?.name}
-                        size={20}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+            {projectInfo.description && (
+              <p className="text-xs text-kumo-subtle line-clamp-2">{projectInfo.description}</p>
+            )}
           </div>
         )}
 
@@ -416,10 +419,10 @@ export const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({
 
       {/* 2. SELECTED MILESTONE DETAILS & SUBMISSION CARD */}
       {selectedMilestone && (
-        <LayerCard className="p-6 ring ring-kumo-line rounded-xl bg-kumo-base shadow-xs space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-kumo-line pb-4">
-            <div>
-              <div className="flex items-center gap-2">
+        <LayerCard className="p-4 sm:p-6 ring ring-kumo-line rounded-xl bg-kumo-base shadow-xs space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 border-b border-kumo-line pb-4">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="rounded bg-kumo-control px-2 py-0.5 text-[10px] font-semibold tracking-wider text-kumo-subtle uppercase">
                   Stage {selectedMilestone.stage}%
                 </span>
@@ -447,16 +450,18 @@ export const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({
                     : "Locked"}
                 </span>
               </div>
-              <h2 className="text-base font-semibold text-kumo-default mt-1">
+              <h2 className="text-base font-semibold text-kumo-default mt-1.5 leading-snug">
                 {selectedMilestone.title}
               </h2>
-              <p className="text-xs text-kumo-subtle mt-0.5">
-                {selectedMilestone.description}
-              </p>
+              {selectedMilestone.description && (
+                <p className="text-xs text-kumo-subtle mt-0.5">
+                  {selectedMilestone.description}
+                </p>
+              )}
             </div>
 
             {/* Quick Actions */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto pt-1 sm:pt-0">
               {/* Show QR code button if waiting for inspection or in progress */}
               {(selectedMilestone.status === "pending_inspection" || selectedMilestone.status === "in_progress") && (
                 <Button
@@ -699,7 +704,7 @@ export const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({
 
             {/* Action Submit Button - Sticky at bottom so no need to scroll */}
             {selectedMilestone.status !== "approved" && selectedMilestone.status !== "locked" && (
-              <div className="sticky bottom-0 z-20 -mx-6 -mb-6 mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-t border-kumo-line bg-kumo-base/95 p-4 sm:px-6 backdrop-blur-md rounded-b-xl shadow-lg ring-1 ring-black/5">
+              <div className="sticky bottom-0 z-20 -mx-4 -mb-4 sm:-mx-6 sm:-mb-6 mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-t border-kumo-line bg-kumo-base/95 p-4 sm:px-6 backdrop-blur-md rounded-b-xl shadow-lg ring-1 ring-black/5">
                 <span className="text-[11px] text-kumo-subtle">
                   Submitting will generate a secure QR code for onsite advisor inspection.
                 </span>
