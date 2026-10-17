@@ -23,6 +23,7 @@ import {
   Tray,
   PaperPlaneTilt,
   ClockCountdown,
+  CaretLeft,
 } from "@phosphor-icons/react";
 import UserAvatar from "@/components/UserAvatar";
 import AppNavbar from "@/components/AppNavbar";
@@ -67,6 +68,7 @@ export default function MailPage() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [activeTab, setActiveTab] = useState<"inbox" | "sent">("inbox");
+  const [mobileView, setMobileView] = useState<"list" | "detail">("list");
   const [activeFilter, setActiveFilter] = useState<"all" | "system" | "direct" | "tickets">("all");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -169,6 +171,7 @@ export default function MailPage() {
   // Mark message as read
   const handleSelectMessage = async (msg: MessageItem) => {
     setSelectedMessage(msg);
+    setMobileView("detail");
     if (msg.status === "unread" && msg.receiverId === currentUser?.id) {
       try {
         await fetch("/api/messages", {
@@ -296,10 +299,14 @@ export default function MailPage() {
       <AppNavbar currentUser={currentUser} subtitle="Mail & Communications" />
 
       {/* Main Mail Layout */}
-      <main className="mx-auto flex w-full max-w-3xl flex-1 px-4 py-10 sm:px-6">
-        <LayerCard className="flex w-full flex-col overflow-hidden rounded-xl border border-kumo-line bg-kumo-base shadow-sm md:flex-row md:h-[680px]">
-          {/* Left Column: Sidebar / Message List */}
-          <div className="flex w-full flex-col border-b border-kumo-line md:w-80 md:border-b-0 md:border-r">
+      <main className="mx-auto flex w-full max-w-3xl flex-1 px-0 py-0 sm:px-6 sm:py-10">
+        <LayerCard className="flex w-full flex-col overflow-hidden rounded-none border-0 bg-kumo-base shadow-none sm:rounded-xl sm:border sm:border-kumo-line sm:shadow-sm md:flex-row h-[calc(100dvh-57px)] sm:h-[680px]">
+          {/* Left Column: Sidebar / Message List (hidden on mobile when viewing detail) */}
+          <div
+            className={`flex w-full flex-col border-b border-kumo-line md:w-80 md:border-b-0 md:border-r h-full ${
+              mobileView === "detail" ? "hidden md:flex" : "flex"
+            }`}
+          >
             {/* Header & Compose Button */}
             <div className="flex items-center justify-between border-b border-kumo-line p-4">
               <h1 className="text-base font-semibold text-kumo-default">Mail & Chat</h1>
@@ -314,11 +321,11 @@ export default function MailPage() {
             </div>
 
             {/* Mail Box Tabs: Inbox vs Sent */}
-            <div className="grid grid-cols-2 border-b border-kumo-line bg-kumo-control/20 text-xs">
+            <div className="grid grid-cols-2 border-b border-kumo-line bg-kumo-control/20 text-xs shrink-0">
               <button
                 type="button"
                 onClick={() => setActiveTab("inbox")}
-                className={`flex items-center justify-center gap-1.5 py-2 font-medium transition-colors border-b-2 ${
+                className={`flex items-center justify-center gap-1.5 py-2.5 font-medium transition-colors border-b-2 ${
                   activeTab === "inbox"
                     ? "border-kumo-brand bg-kumo-base text-kumo-brand"
                     : "border-transparent text-kumo-subtle hover:text-kumo-default"
@@ -330,7 +337,7 @@ export default function MailPage() {
               <button
                 type="button"
                 onClick={() => setActiveTab("sent")}
-                className={`flex items-center justify-center gap-1.5 py-2 font-medium transition-colors border-b-2 ${
+                className={`flex items-center justify-center gap-1.5 py-2.5 font-medium transition-colors border-b-2 ${
                   activeTab === "sent"
                     ? "border-kumo-brand bg-kumo-base text-kumo-brand"
                     : "border-transparent text-kumo-subtle hover:text-kumo-default"
@@ -342,7 +349,7 @@ export default function MailPage() {
             </div>
 
             {/* Filter Tabs */}
-            <div className="flex border-b border-kumo-line bg-kumo-control/40 px-3 py-1.5 text-xs">
+            <div className="flex border-b border-kumo-line bg-kumo-control/40 px-3 py-1.5 text-xs shrink-0">
               <button
                 type="button"
                 onClick={() => setActiveFilter("all")}
@@ -390,7 +397,7 @@ export default function MailPage() {
             </div>
 
             {/* Search Input */}
-            <div className="border-b border-kumo-line p-3">
+            <div className="border-b border-kumo-line p-3 shrink-0">
               <div className="relative">
                 <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-2.5 text-kumo-subtle">
                   <MagnifyingGlass weight="thin" size={14} />
@@ -504,70 +511,85 @@ export default function MailPage() {
           </div>
 
           {/* Right Column: Active Message Details & Conversation Thread */}
-          <div className="flex flex-1 flex-col">
+          <div
+            className={`flex flex-1 flex-col h-full min-h-0 bg-kumo-base ${
+              mobileView === "list" ? "hidden md:flex" : "flex"
+            }`}
+          >
             {selectedMessage ? (
-              <div className="flex flex-1 flex-col h-full">
-                {/* Header */}
-                <div className="flex items-center justify-between border-b border-kumo-line p-6">
-                  <div className="flex items-center gap-3 min-w-0">
+              <div className="flex flex-1 flex-col h-full min-h-0 overflow-hidden">
+                {/* Header with Back button on mobile */}
+                <div className="flex items-center justify-between border-b border-kumo-line p-4 sm:p-6 shrink-0 bg-kumo-base">
+                  <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                    {/* Back Button on Mobile */}
+                    <button
+                      type="button"
+                      onClick={() => setMobileView("list")}
+                      className="md:hidden flex h-8 w-8 items-center justify-center rounded-lg border border-kumo-line text-kumo-subtle hover:text-kumo-default hover:bg-kumo-tint shrink-0 mr-1"
+                      title="Back to messages"
+                    >
+                      <CaretLeft weight="bold" size={16} />
+                    </button>
+
                     {selectedMessage.type === "system" ? (
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400">
-                        <Sparkle weight="thin" size={24} />
+                      <div className="flex h-9 w-9 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400">
+                        <Sparkle weight="thin" size={20} className="sm:hidden" />
+                        <Sparkle weight="thin" size={24} className="hidden sm:block" />
                       </div>
                     ) : selectedMessage.type === "ticket" ? (
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-orange-100 text-orange-600 dark:bg-orange-950/40 dark:text-orange-400">
-                        <Lifebuoy weight="thin" size={24} />
+                      <div className="flex h-9 w-9 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-full bg-orange-100 text-orange-600 dark:bg-orange-950/40 dark:text-orange-400">
+                        <Lifebuoy weight="thin" size={20} className="sm:hidden" />
+                        <Lifebuoy weight="thin" size={24} className="hidden sm:block" />
                       </div>
                     ) : (
                       <UserAvatar
                         src={(activeTab === "sent" ? selectedMessage.receiver?.avatarUrl : selectedMessage.sender?.avatarUrl) || null}
                         name={activeTab === "sent" ? selectedMessage.receiver?.name : selectedMessage.sender?.name}
-                        size={44}
+                        size={36}
                         className="rounded-full ring-1 ring-kumo-line"
                       />
                     )}
 
                     <div className="flex flex-col min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h2 className="text-base font-semibold text-kumo-default truncate">
+                      <div className="flex items-center gap-1.5 sm:gap-2">
+                        <h2 className="text-sm sm:text-base font-semibold text-kumo-default truncate">
                           {selectedMessage.subject}
                         </h2>
                         {selectedMessage.type === "system" && (
                           <Badge variant="primary">System</Badge>
                         )}
                         {selectedMessage.type === "ticket" && (
-                          <Badge variant="warning">Support Ticket</Badge>
+                          <Badge variant="warning">Ticket</Badge>
                         )}
                       </div>
-                      <span className="text-xs text-kumo-subtle">
+                      <span className="text-[11px] sm:text-xs text-kumo-subtle truncate">
                         {activeTab === "sent" ? (
                           <>
                             To: <span className="text-kumo-default">{selectedMessage.receiver?.name || "College Administration"}</span>
-                            {selectedMessage.receiver?.email && ` (${selectedMessage.receiver?.email})`}
                           </>
                         ) : (
                           <>
-                            From: <span className="text-kumo-default">{selectedMessage.sender?.name}</span> ({selectedMessage.sender?.email})
+                            From: <span className="text-kumo-default">{selectedMessage.sender?.name}</span>
                           </>
                         )}
                       </span>
                     </div>
                   </div>
 
-                  <span className="text-xs text-kumo-subtle">
+                  <span className="text-[10px] sm:text-xs text-kumo-subtle shrink-0">
                     {new Date(selectedMessage.createdAt).toLocaleString([], {
-                      dateStyle: "medium",
+                      dateStyle: "short",
                       timeStyle: "short",
                     })}
                   </span>
                 </div>
 
-                {/* Message Body */}
-                <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                {/* Message Body (Scrolls independently, leaving reply box pinned at bottom) */}
+                <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
                   {/* Sender View: Invitation Status Tracker */}
                   {selectedMessage.senderId === currentUser?.id && selectedMessage.invitationInfo && (
                     <div
-                      className={`rounded-lg border p-4 text-xs ${
+                      className={`rounded-lg border p-3.5 sm:p-4 text-xs ${
                         selectedMessage.invitationInfo.status === "accepted"
                           ? "border-green-500/30 bg-green-500/5 text-green-800 dark:text-green-300"
                           : selectedMessage.invitationInfo.status === "rejected"
@@ -591,7 +613,7 @@ export default function MailPage() {
                             : "รอการตอบรับจากผู้รับ (Pending Response)"}
                         </span>
                       </div>
-                      <p className="opacity-90 leading-relaxed">
+                      <p className="opacity-90 leading-relaxed text-[11px] sm:text-xs">
                         {selectedMessage.invitationInfo.status === "accepted"
                           ? `${selectedMessage.receiver?.name || "ผู้รับ"} ได้ยอมรับเข้าร่วมเป็น ${selectedMessage.invitationInfo.role} ในโปรเจกต์นี้แล้ว`
                           : selectedMessage.invitationInfo.status === "rejected"
@@ -601,7 +623,7 @@ export default function MailPage() {
                     </div>
                   )}
 
-                  <div className="rounded-lg border border-kumo-line bg-kumo-control/30 p-5 text-xs text-kumo-default leading-relaxed whitespace-pre-wrap">
+                  <div className="rounded-lg border border-kumo-line bg-kumo-control/30 p-4 sm:p-5 text-xs text-kumo-default leading-relaxed whitespace-pre-wrap">
                     {selectedMessage.content.replace(/\[ACCEPT_PROJECT:\d+\]\s*\[REJECT_PROJECT:\d+\]/g, "").trim()}
                   </div>
 
@@ -620,7 +642,7 @@ export default function MailPage() {
                         if (isAlreadyResponded) {
                           return (
                             <div
-                              className={`rounded-lg border p-4 text-xs ${
+                              className={`rounded-lg border p-3.5 sm:p-4 text-xs ${
                                 selectedMessage.invitationInfo?.status === "accepted"
                                   ? "border-green-500/30 bg-green-500/5 text-green-800 dark:text-green-300"
                                   : "border-red-500/30 bg-red-500/5 text-red-800 dark:text-red-300"
@@ -726,12 +748,12 @@ export default function MailPage() {
                   )}
                 </div>
 
-                {/* Quick Reply Form */}
-                <div className="border-t border-kumo-line p-4 bg-kumo-base">
-                  <form onSubmit={handleSendReply} className="space-y-3">
+                {/* Quick Reply Form (Always pinned at bottom, no page scrolling needed) */}
+                <div className="border-t border-kumo-line p-3 sm:p-4 bg-kumo-base shrink-0">
+                  <form onSubmit={handleSendReply} className="space-y-2.5">
                     <div className="relative">
                       <textarea
-                        rows={3}
+                        rows={2}
                         required
                         value={replyContent}
                         onChange={(e) => setReplyContent(e.target.value)}
@@ -740,15 +762,15 @@ export default function MailPage() {
                             ? "Reply to create a support ticket for college administrators..."
                             : `Reply to ${selectedMessage.sender?.name}...`
                         }
-                        className="w-full rounded-md border border-kumo-line bg-kumo-control p-3 text-xs text-kumo-default placeholder:text-kumo-subtle focus:border-kumo-brand focus:outline-none resize-none"
+                        className="w-full rounded-md border border-kumo-line bg-kumo-control p-2.5 text-xs text-kumo-default placeholder:text-kumo-subtle focus:border-kumo-brand focus:outline-none resize-none"
                       />
                     </div>
 
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] text-kumo-subtle">
+                      <span className="text-[10px] sm:text-[11px] text-kumo-subtle truncate max-w-[170px] sm:max-w-none">
                         {selectedMessage.type === "system"
-                          ? "Response will be converted to an Admin Ticket"
-                          : `Direct reply to ${selectedMessage.sender?.email}`}
+                          ? "Converted to Admin Ticket"
+                          : `Reply to ${selectedMessage.sender?.email || "user"}`}
                       </span>
 
                       <Button
@@ -758,7 +780,7 @@ export default function MailPage() {
                         disabled={sending || !replyContent.trim()}
                       >
                         <PaperPlaneRight weight="thin" size={14} className="mr-1.5" />
-                        <span>{sending ? "Sending..." : "Send reply"}</span>
+                        <span>{sending ? "Sending..." : "Send"}</span>
                       </Button>
                     </div>
                   </form>
