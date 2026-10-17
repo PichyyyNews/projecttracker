@@ -194,6 +194,8 @@ export default function MailPage() {
 
       setIsComposeOpen(false);
       setComposeData({ receiverId: "system", subject: "", content: "" });
+      setRecipientSearch("College Administration");
+      setIsRecipientMenuOpen(false);
       showToast(
         isSystemOrTicket
           ? "Support ticket sent to college admin"
@@ -557,11 +559,34 @@ export default function MailPage() {
               <div className="grid gap-1.5 relative" ref={recipientDropdownRef}>
                 <label className="text-xs font-medium text-kumo-default">Recipient (ผู้รับ)</label>
                 
-                {/* Searchable input / Trigger */}
-                <div className="relative">
-                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-kumo-subtle">
-                    <MagnifyingGlass weight="thin" size={14} />
+                {/* Unified Searchable Input with Inline Selected Recipient Profile */}
+                <div
+                  onClick={() => setIsRecipientMenuOpen(true)}
+                  className={`flex items-center gap-2 rounded-md border bg-kumo-control px-2.5 py-1.5 text-xs transition-colors cursor-text ${
+                    isRecipientMenuOpen ? "border-kumo-brand ring-1 ring-kumo-brand" : "border-kumo-line"
+                  }`}
+                >
+                  {/* Selected Recipient Avatar / Icon */}
+                  <div className="shrink-0 flex items-center">
+                    {composeData.receiverId === "system" ? (
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400">
+                        <Sparkle weight="thin" size={14} />
+                      </div>
+                    ) : (
+                      (() => {
+                        const user = contactsList.find((c) => c.id.toString() === composeData.receiverId);
+                        return user ? (
+                          <UserAvatar src={user.avatarUrl || null} name={user.name} size={24} />
+                        ) : (
+                          <div className="text-kumo-subtle">
+                            <MagnifyingGlass weight="thin" size={14} />
+                          </div>
+                        );
+                      })()
+                    )}
                   </div>
+
+                  {/* Input field */}
                   <input
                     type="text"
                     value={recipientSearch}
@@ -570,48 +595,41 @@ export default function MailPage() {
                       setRecipientSearch(e.target.value);
                       setIsRecipientMenuOpen(true);
                     }}
-                    placeholder="Search by name, role, email, or select from list..."
-                    className="w-full rounded-md border border-kumo-line bg-kumo-control py-2 pl-9 pr-8 text-xs text-kumo-default placeholder:text-kumo-subtle focus:border-kumo-brand focus:outline-none"
+                    placeholder="Search by name, role, email..."
+                    className="flex-1 bg-transparent text-xs font-medium text-kumo-default placeholder:text-kumo-subtle placeholder:font-normal focus:outline-none min-w-0"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setIsRecipientMenuOpen(!isRecipientMenuOpen)}
-                    className="absolute inset-y-0 right-0 flex items-center pr-2.5 text-kumo-subtle hover:text-kumo-default"
-                  >
-                    <CaretDown weight="thin" size={14} className={`transition-transform duration-200 ${isRecipientMenuOpen ? "rotate-180" : ""}`} />
-                  </button>
-                </div>
 
-                {/* Selected Recipient Pill Preview */}
-                <div className="flex items-center gap-2 rounded-md border border-kumo-line/60 bg-kumo-tint/40 px-3 py-1.5 text-xs">
-                  <span className="text-[11px] text-kumo-subtle">Sending to:</span>
+                  {/* Role / Support Ticket Badge inside the input */}
                   {composeData.receiverId === "system" ? (
-                    <div className="flex items-center gap-1.5 font-medium text-kumo-default">
-                      <div className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400">
-                        <Sparkle weight="thin" size={12} />
-                      </div>
-                      <span>College Administration</span>
-                      <span className="rounded bg-amber-500/10 px-1 py-0.2 text-[9px] text-amber-600 font-medium">
-                        Support Ticket
-                      </span>
-                    </div>
+                    <span className="rounded bg-amber-500/10 px-1.5 py-0.5 text-[10px] text-amber-600 font-medium shrink-0">
+                      Support Ticket
+                    </span>
                   ) : (
                     (() => {
                       const user = contactsList.find((c) => c.id.toString() === composeData.receiverId);
                       return user ? (
-                        <div className="flex items-center gap-1.5 font-medium text-kumo-default">
-                          <UserAvatar src={user.avatarUrl || null} name={user.name} size={18} />
-                          <span>{user.name}</span>
-                          <span className="text-[10px] text-kumo-subtle">({user.email})</span>
-                          <Badge variant={USER_ROLES[user.role as UserRole]?.badgeVariant || "neutral"}>
-                            {USER_ROLES[user.role as UserRole]?.label || user.role}
-                          </Badge>
-                        </div>
-                      ) : (
-                        <span className="text-kumo-subtle italic">None</span>
-                      );
+                        <Badge variant={USER_ROLES[user.role as UserRole]?.badgeVariant || "neutral"} className="shrink-0">
+                          {USER_ROLES[user.role as UserRole]?.label || user.role}
+                        </Badge>
+                      ) : null;
                     })()
                   )}
+
+                  {/* Caret Button */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsRecipientMenuOpen(!isRecipientMenuOpen);
+                    }}
+                    className="text-kumo-subtle hover:text-kumo-default pl-1"
+                  >
+                    <CaretDown
+                      weight="thin"
+                      size={14}
+                      className={`transition-transform duration-200 ${isRecipientMenuOpen ? "rotate-180" : ""}`}
+                    />
+                  </button>
                 </div>
 
                 {/* Dropdown Suggestions List with Profile Photos */}

@@ -305,18 +305,18 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                {/* Mobile-friendly action buttons (always visible on touch screens) */}
-                <div className="sm:hidden absolute -bottom-1 -right-1 flex items-center gap-1">
+                {/* Mobile-friendly action buttons (subtle, clean styling) */}
+                <div className="sm:hidden absolute -bottom-1 -right-1 flex items-center gap-1.5">
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     title="Change photo"
-                    className="flex h-7 w-7 items-center justify-center rounded-full bg-kumo-brand text-white shadow-md ring-2 ring-kumo-base"
+                    className="flex h-6 w-6 items-center justify-center rounded-full border border-kumo-line bg-kumo-base text-kumo-default shadow-xs transition-colors hover:bg-kumo-control"
                   >
                     {uploading ? (
-                      <SpinnerGap weight="thin" size={14} className="animate-spin" />
+                      <SpinnerGap weight="thin" size={13} className="animate-spin" />
                     ) : (
-                      <Camera weight="bold" size={13} />
+                      <Camera weight="thin" size={13} />
                     )}
                   </button>
                   {formData.avatarUrl && (
@@ -324,9 +324,9 @@ export default function ProfilePage() {
                       type="button"
                       onClick={handleRemoveAvatar}
                       title="Remove photo"
-                      className="flex h-7 w-7 items-center justify-center rounded-full bg-red-600 text-white shadow-md ring-2 ring-kumo-base"
+                      className="flex h-6 w-6 items-center justify-center rounded-full border border-kumo-line bg-kumo-base text-kumo-subtle shadow-xs transition-colors hover:text-red-600 hover:border-red-300 dark:hover:border-red-900"
                     >
-                      <Trash weight="bold" size={13} />
+                      <Trash weight="thin" size={13} />
                     </button>
                   )}
                 </div>
