@@ -57,9 +57,12 @@ export async function GET(req: Request) {
         })
         .from(messages)
         .where(
-          or(
-            eq(messages.receiverId, payload.id),
-            and(eq(messages.type, "system"), or(isNull(messages.receiverId), eq(messages.receiverId, payload.id)))
+          and(
+            isNull(messages.parentId),
+            or(
+              eq(messages.receiverId, payload.id),
+              and(eq(messages.type, "system"), or(isNull(messages.receiverId), eq(messages.receiverId, payload.id)))
+            )
           )
         )
         .orderBy(desc(messages.createdAt));
@@ -99,6 +102,54 @@ export async function GET(req: Request) {
       });
     });
 
+    // Fetch all replies where parentId is in our messages or any reply involving current user
+    const allMessageIds = userMessages.map((m) => m.id);
+    let allReplies: any[] = [];
+    if (allMessageIds.length > 0) {
+      allReplies = await db
+        .select({
+          id: messages.id,
+          senderId: messages.senderId,
+          receiverId: messages.receiverId,
+          subject: messages.subject,
+          content: messages.content,
+          type: messages.type,
+          status: messages.status,
+          parentId: messages.parentId,
+          createdAt: messages.createdAt,
+          updatedAt: messages.updatedAt,
+        })
+        .from(messages)
+        .where(
+          or(
+            // Direct child of one of userMessages
+            ...allMessageIds.map((id) => eq(messages.parentId, id))
+          )
+        )
+        .orderBy(messages.createdAt);
+    }
+
+    // Group replies by parentId
+    const repliesMap = new Map<number, any[]>();
+    allReplies.forEach((r) => {
+      if (!r.parentId) return;
+      const rSender = r.senderId ? userMap.get(r.senderId) : null;
+      const rReceiver = r.receiverId ? userMap.get(r.receiverId) : null;
+      const enrichedReply = {
+        ...r,
+        sender: rSender
+          ? { id: rSender.id, name: rSender.name, email: rSender.email, role: rSender.role, avatarUrl: rSender.avatarUrl }
+          : { id: 0, name: "System", email: "system@projecttracker.internal", role: "system", avatarUrl: null },
+        receiver: rReceiver
+          ? { id: rReceiver.id, name: rReceiver.name, email: rReceiver.email, role: rReceiver.role, avatarUrl: rReceiver.avatarUrl }
+          : null,
+      };
+      if (!repliesMap.has(r.parentId)) {
+        repliesMap.set(r.parentId, []);
+      }
+      repliesMap.get(r.parentId)!.push(enrichedReply);
+    });
+
     const enrichedMessages = userMessages.map((msg) => {
       const sender = msg.senderId ? userMap.get(msg.senderId) : null;
       const receiver = msg.receiverId ? userMap.get(msg.receiverId) : null;
@@ -124,6 +175,7 @@ export async function GET(req: Request) {
       return {
         ...msg,
         invitationInfo,
+        replies: repliesMap.get(msg.id) || [],
         sender: sender
           ? { id: sender.id, name: sender.name, email: sender.email, role: sender.role, avatarUrl: sender.avatarUrl }
           : { id: 0, name: "System", email: "system@projecttracker.internal", role: "system", avatarUrl: null },

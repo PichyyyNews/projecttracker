@@ -24,6 +24,7 @@ import {
   PaperPlaneTilt,
   ClockCountdown,
   CaretLeft,
+  ChatCircleDots,
 } from "@phosphor-icons/react";
 import UserAvatar from "@/components/UserAvatar";
 import AppNavbar from "@/components/AppNavbar";
@@ -49,6 +50,7 @@ interface MessageItem {
   createdAt: string;
   sender: MessageUser;
   receiver: MessageUser | null;
+  replies?: MessageItem[];
   invitationInfo?: {
     projectId: number;
     status: string; // pending, accepted, rejected
@@ -625,6 +627,50 @@ export default function MailPage() {
                   <div className="rounded-lg border border-kumo-line bg-kumo-control/30 p-4 sm:p-5 text-xs text-kumo-default leading-relaxed whitespace-pre-wrap">
                     {selectedMessage.content.replace(/\[ACCEPT_PROJECT:\d+\]\s*\[REJECT_PROJECT:\d+\]/g, "").trim()}
                   </div>
+
+                  {/* Conversation Replies Thread (Responses sent back and forth) */}
+                  {selectedMessage.replies && selectedMessage.replies.length > 0 && (
+                    <div className="space-y-3 pt-3 border-t border-kumo-line">
+                      <div className="text-[11px] font-semibold text-kumo-subtle flex items-center gap-1.5">
+                        <ChatCircleDots weight="thin" size={14} />
+                        <span>Replies & Conversation History ({selectedMessage.replies.length})</span>
+                      </div>
+
+                        <div className="space-y-3">
+                          {selectedMessage.replies.map((reply) => {
+                            const isMe = reply.senderId === currentUser?.id;
+                            return (
+                              <div
+                                key={reply.id}
+                                className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}
+                              >
+                                <div className="flex items-center gap-1.5 mb-1 px-1 text-[10px] text-kumo-subtle">
+                                  <span className="font-semibold text-kumo-default">
+                                    {isMe ? "You" : reply.sender?.name || "User"}
+                                  </span>
+                                  <span>&bull;</span>
+                                  <span>
+                                    {new Date(reply.createdAt).toLocaleTimeString([], {
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    })}
+                                  </span>
+                                </div>
+                                <div
+                                  className={`rounded-xl px-3.5 py-2.5 max-w-[85%] text-xs leading-relaxed whitespace-pre-wrap ${
+                                    isMe
+                                      ? "bg-kumo-brand text-white rounded-br-xs"
+                                      : "bg-kumo-control text-kumo-default border border-kumo-line rounded-bl-xs"
+                                  }`}
+                                >
+                                  {reply.content}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
 
                   {/* Recipient View: Interactive Project Invitation Banner if invitation detected and pending */}
                   {selectedMessage.receiverId === currentUser?.id &&
