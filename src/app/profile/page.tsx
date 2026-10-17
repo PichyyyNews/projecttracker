@@ -305,13 +305,14 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                {/* Mobile-friendly action buttons (subtle, clean styling) */}
-                <div className="sm:hidden absolute -bottom-1 -right-1 flex items-center gap-1.5">
+                {/* Mobile-friendly action buttons: Split Left (Soft Blue) & Right (Soft Red) */}
+                <div className="sm:hidden">
+                  {/* Left: Change Photo (Soft Blue) */}
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     title="Change photo"
-                    className="flex h-6 w-6 items-center justify-center rounded-full border border-kumo-line bg-kumo-base text-kumo-default shadow-xs transition-colors hover:bg-kumo-control"
+                    className="absolute -bottom-1 -left-1 flex h-6 w-6 items-center justify-center rounded-full border border-blue-200 bg-blue-50 text-blue-600 dark:border-blue-800/60 dark:bg-blue-950/60 dark:text-blue-300 shadow-xs transition-colors hover:bg-blue-100 dark:hover:bg-blue-900/50"
                   >
                     {uploading ? (
                       <SpinnerGap weight="thin" size={13} className="animate-spin" />
@@ -319,12 +320,14 @@ export default function ProfilePage() {
                       <Camera weight="thin" size={13} />
                     )}
                   </button>
+
+                  {/* Right: Delete Photo (Soft Red) */}
                   {formData.avatarUrl && (
                     <button
                       type="button"
                       onClick={handleRemoveAvatar}
                       title="Remove photo"
-                      className="flex h-6 w-6 items-center justify-center rounded-full border border-kumo-line bg-kumo-base text-kumo-subtle shadow-xs transition-colors hover:text-red-600 hover:border-red-300 dark:hover:border-red-900"
+                      className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border border-red-200 bg-red-50 text-red-600 dark:border-red-800/60 dark:bg-red-950/60 dark:text-red-300 shadow-xs transition-colors hover:bg-red-100 dark:hover:bg-red-900/50"
                     >
                       <Trash weight="thin" size={13} />
                     </button>
