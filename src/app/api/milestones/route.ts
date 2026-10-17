@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { verifySession } from "@/lib/auth";
 import { db } from "@/db";
-import { projects, projectMembers, milestones, users, messages } from "@/db/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { projects, projectMembers, milestones, users, messages, milestoneTasks } from "@/db/schema";
+import { eq, and, desc, inArray } from "drizzle-orm";
 import crypto from "crypto";
 
 const DEFAULT_STAGES = [
@@ -59,7 +59,18 @@ export async function GET(req: Request) {
         .orderBy(milestones.stage);
     }
 
-    // Enrich with approver details
+    // Fetch all sub-tasks for these milestones
+    const milestoneIds = projectMilestones.map((m) => m.id);
+    let allTasks: any[] = [];
+    if (milestoneIds.length > 0) {
+      allTasks = await db
+        .select()
+        .from(milestoneTasks)
+        .where(inArray(milestoneTasks.milestoneId, milestoneIds))
+        .orderBy(milestoneTasks.createdAt);
+    }
+
+    // Enrich with approver details & sub-tasks
     const approverIds = projectMilestones.map((m) => m.approvedBy).filter(Boolean) as number[];
     let approverMap = new Map();
     if (approverIds.length > 0) {
@@ -67,10 +78,21 @@ export async function GET(req: Request) {
       approvers.forEach((u) => approverMap.set(u.id, u));
     }
 
-    const enriched = projectMilestones.map((m) => ({
-      ...m,
-      approver: m.approvedBy ? approverMap.get(m.approvedBy) : null,
-    }));
+    const enriched = projectMilestones.map((m) => {
+      const mTasks = allTasks.filter((t) => t.milestoneId === m.id);
+      const totalTasks = mTasks.length;
+      const completedTasks = mTasks.filter((t) => t.isCompleted).length;
+      const taskPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+      return {
+        ...m,
+        tasks: mTasks,
+        totalTasks,
+        completedTasks,
+        taskPercentage,
+        approver: m.approvedBy ? approverMap.get(m.approvedBy) : null,
+      };
+    });
 
     return NextResponse.json({ success: true, data: enriched, project });
   } catch (err: any) {

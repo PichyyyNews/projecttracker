@@ -15,9 +15,24 @@ import {
   X,
   Sparkle,
   ChatCircleDots,
+  Plus,
+  CheckSquare,
+  Square,
+  Trash,
+  Check,
 } from "@phosphor-icons/react";
 import { Button, LayerCard, Badge } from "@cloudflare/kumo";
 import UserAvatar from "@/components/UserAvatar";
+
+export interface MilestoneTaskItem {
+  id: number;
+  milestoneId: number;
+  title: string;
+  isCompleted: boolean;
+  assignedUserId?: number | null;
+  completedAt?: string | null;
+  createdAt: string;
+}
 
 export interface MilestoneItem {
   id: number;
@@ -35,6 +50,10 @@ export interface MilestoneItem {
   submittedAt: string | null;
   approvedAt: string | null;
   approvedBy: number | null;
+  tasks?: MilestoneTaskItem[];
+  totalTasks?: number;
+  completedTasks?: number;
+  taskPercentage?: number;
   approver?: {
     id: number;
     name: string;
@@ -78,6 +97,69 @@ export const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({
   const [linksList, setLinksList] = useState<string[]>([]);
   const [noteInput, setNoteInput] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  // Milestone Sub-Tasks State
+  const [newTaskTitle, setNewTaskTitle] = useState("");
+  const [addingTask, setAddingTask] = useState(false);
+
+  const handleAddTask = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedMilestone || !newTaskTitle.trim()) return;
+
+    setAddingTask(true);
+    try {
+      const res = await fetch("/api/milestones/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          milestoneId: selectedMilestone.id,
+          title: newTaskTitle.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || "Failed to add job");
+
+      setNewTaskTitle("");
+      if (onRefresh) onRefresh();
+    } catch (err: any) {
+      alert(err.message || "Failed to add job");
+    } finally {
+      setAddingTask(false);
+    }
+  };
+
+  const handleToggleTask = async (taskId: number, currentCompleted: boolean) => {
+    try {
+      const res = await fetch("/api/milestones/tasks", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          taskId,
+          isCompleted: !currentCompleted,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || "Failed to update job");
+
+      if (onRefresh) onRefresh();
+    } catch (err: any) {
+      alert(err.message || "Failed to update job");
+    }
+  };
+
+  const handleDeleteTask = async (taskId: number) => {
+    try {
+      const res = await fetch(`/api/milestones/tasks?taskId=${taskId}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || "Failed to delete job");
+
+      if (onRefresh) onRefresh();
+    } catch (err: any) {
+      alert(err.message || "Failed to delete job");
+    }
+  };
 
   // QR Modal
   const [qrModalMilestone, setQrModalMilestone] = useState<MilestoneItem | null>(null);
@@ -311,6 +393,8 @@ export const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({
                       ? "Inspect"
                       : m.status === "needs_revision"
                       ? "Revision"
+                      : m.totalTasks && m.totalTasks > 0
+                      ? `${m.completedTasks}/${m.totalTasks} jobs (${m.taskPercentage}%)`
                       : m.status === "in_progress"
                       ? "In progress"
                       : "Locked"}
@@ -408,6 +492,123 @@ export const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({
               <p className="whitespace-pre-wrap leading-relaxed">{selectedMilestone.feedbackNotes}</p>
             </div>
           )}
+
+          {/* Milestone Sub-Tasks & Work Breakdown Checklist */}
+          <div className="rounded-lg border border-kumo-line bg-kumo-base p-4 space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-kumo-line pb-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-xs text-kumo-default">
+                    Milestone Jobs Checklist
+                  </span>
+                  <span className="rounded bg-kumo-control px-2 py-0.5 text-[10px] font-medium text-kumo-subtle">
+                    {selectedMilestone.totalTasks || 0} jobs total
+                  </span>
+                </div>
+                <p className="text-[11px] text-kumo-subtle mt-0.5">
+                  Break down this stage into specific tasks to track sub-percentage completion.
+                </p>
+              </div>
+
+              {/* Job Progress & Remaining Indicator */}
+              <div className="flex items-center gap-3">
+                <div className="flex flex-col items-end text-right">
+                  <div className="flex items-center gap-1.5 text-xs">
+                    <span className="font-bold text-kumo-brand">
+                      {selectedMilestone.taskPercentage || 0}%
+                    </span>
+                    <span className="text-[11px] text-kumo-subtle">
+                      ({selectedMilestone.completedTasks || 0}/{selectedMilestone.totalTasks || 0} done)
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-kumo-subtle">
+                    {(selectedMilestone.totalTasks || 0) - (selectedMilestone.completedTasks || 0) === 0 && (selectedMilestone.totalTasks || 0) > 0 ? (
+                      <span className="text-emerald-600 font-medium">All jobs finished for this stage!</span>
+                    ) : (
+                      <span>
+                        {Math.max(0, (selectedMilestone.totalTasks || 0) - (selectedMilestone.completedTasks || 0))} job(s) remaining for {selectedMilestone.stage}%
+                      </span>
+                    )}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Sub-Progress Bar */}
+            <div className="h-1.5 w-full bg-kumo-control rounded-full overflow-hidden">
+              <div
+                className="h-full bg-kumo-brand transition-all duration-300"
+                style={{ width: `${selectedMilestone.taskPercentage || 0}%` }}
+              />
+            </div>
+
+            {/* Task Checklist Items */}
+            <div className="space-y-1.5 pt-1">
+              {(!selectedMilestone.tasks || selectedMilestone.tasks.length === 0) ? (
+                <div className="text-center py-4 text-xs text-kumo-subtle bg-kumo-control/40 rounded-md">
+                  No sub-jobs added yet for this milestone. Add your first job below to start tracking.
+                </div>
+              ) : (
+                selectedMilestone.tasks.map((task) => {
+                  const canModify = selectedMilestone.status !== "approved" && selectedMilestone.status !== "locked";
+                  return (
+                    <div
+                      key={task.id}
+                      className={`flex items-center justify-between p-2 rounded-md border transition-colors ${
+                        task.isCompleted
+                          ? "border-emerald-500/20 bg-emerald-500/5 text-kumo-subtle"
+                          : "border-kumo-line bg-kumo-base hover:bg-kumo-tint/40 text-kumo-default"
+                      }`}
+                    >
+                      <button
+                        type="button"
+                        disabled={!canModify}
+                        onClick={() => handleToggleTask(task.id, task.isCompleted)}
+                        className="flex items-center gap-2.5 text-left flex-1 min-w-0"
+                      >
+                        {task.isCompleted ? (
+                          <CheckSquare weight="fill" size={17} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                        ) : (
+                          <Square weight="thin" size={17} className="text-kumo-subtle hover:text-kumo-brand shrink-0" />
+                        )}
+                        <span className={`text-xs truncate ${task.isCompleted ? "line-through opacity-75" : "font-medium"}`}>
+                          {task.title}
+                        </span>
+                      </button>
+
+                      {canModify && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteTask(task.id)}
+                          className="text-kumo-subtle hover:text-rose-500 p-1 transition-colors"
+                          title="Delete job"
+                        >
+                          <Trash weight="thin" size={14} />
+                        </button>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Add New Job Input */}
+            {selectedMilestone.status !== "approved" && selectedMilestone.status !== "locked" && (
+              <form onSubmit={handleAddTask} className="flex gap-2 pt-2 border-t border-kumo-line">
+                <input
+                  type="text"
+                  value={newTaskTitle}
+                  onChange={(e) => setNewTaskTitle(e.target.value)}
+                  placeholder="Add specific job or feature for this stage (e.g. Design ER Diagram, Set up Auth API)..."
+                  className="flex-1 rounded border border-kumo-line bg-kumo-control py-1.5 px-3 text-xs text-kumo-default placeholder:text-kumo-subtle focus:border-kumo-brand focus:outline-none"
+                />
+                <Button variant="secondary" size="sm" type="submit" disabled={addingTask || !newTaskTitle.trim()}>
+                  <Plus weight="thin" size={14} className="mr-1" />
+                  <span>{addingTask ? "Adding..." : "Add Job"}</span>
+                </Button>
+              </form>
+            )}
+          </div>
 
           {/* Form for Student: Goal & Scope, Deliverables Links */}
           <form onSubmit={handleSubmitMilestone} className="space-y-4">

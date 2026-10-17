@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { verifySession } from "@/lib/auth";
 import { db } from "@/db";
-import { projects, projectMembers, milestones, users } from "@/db/schema";
+import { projects, projectMembers, milestones, users, milestoneTasks } from "@/db/schema";
 import { eq, desc, inArray } from "drizzle-orm";
 
 export async function GET() {
@@ -30,10 +30,15 @@ export async function GET() {
     const projectIds = advisingProjects.map((p) => p.id);
     let allMilestones: any[] = [];
     let allMembers: any[] = [];
+    let allMilestoneTasks: any[] = [];
 
     if (projectIds.length > 0) {
       allMilestones = await db.select().from(milestones).where(inArray(milestones.projectId, projectIds));
       allMembers = await db.select().from(projectMembers).where(inArray(projectMembers.projectId, projectIds));
+      const mIds = allMilestones.map((m) => m.id);
+      if (mIds.length > 0) {
+        allMilestoneTasks = await db.select().from(milestoneTasks).where(inArray(milestoneTasks.milestoneId, mIds));
+      }
     }
 
     const allUsers = await db.select().from(users);
@@ -43,7 +48,20 @@ export async function GET() {
     const enriched = advisingProjects.map((p) => {
       const pMilestones = allMilestones
         .filter((m) => m.projectId === p.id)
-        .sort((a, b) => a.stage - b.stage);
+        .sort((a, b) => a.stage - b.stage)
+        .map((m) => {
+          const mTasks = allMilestoneTasks.filter((t) => t.milestoneId === m.id);
+          const totalTasks = mTasks.length;
+          const completedTasks = mTasks.filter((t) => t.isCompleted).length;
+          const taskPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+          return {
+            ...m,
+            tasks: mTasks,
+            totalTasks,
+            completedTasks,
+            taskPercentage,
+          };
+        });
 
       const pMembers = allMembers
         .filter((m) => m.projectId === p.id)

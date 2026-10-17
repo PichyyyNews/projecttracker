@@ -107,6 +107,17 @@ export const milestones = pgTable("milestones", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const milestoneTasks = pgTable("milestone_tasks", {
+  id: serial("id").primaryKey(),
+  milestoneId: integer("milestone_id").references(() => milestones.id, { onDelete: "cascade" }).notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  isCompleted: boolean("is_completed").default(false).notNull(),
+  assignedUserId: integer("assigned_user_id").references(() => users.id, { onDelete: "set null" }),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Department = typeof departments.$inferSelect;
@@ -125,3 +136,5 @@ export type Message = typeof messages.$inferSelect;
 export type NewMessage = typeof messages.$inferInsert;
 export type Milestone = typeof milestones.$inferSelect;
 export type NewMilestone = typeof milestones.$inferInsert;
+export type MilestoneTask = typeof milestoneTasks.$inferSelect;
+export type NewMilestoneTask = typeof milestoneTasks.$inferInsert;
