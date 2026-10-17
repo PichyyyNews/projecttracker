@@ -580,39 +580,53 @@ export default function HomePage() {
 
               {/* Members Selection (Student Teammates) */}
               <div className="grid gap-1.5 relative" ref={memberDropdownRef}>
-                <label className="text-xs font-medium text-kumo-default">
-                  Project members
-                </label>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <label className="text-xs font-medium text-kumo-default">
+                      Project members
+                    </label>
 
-                {/* Selected Members Chips */}
-                <div className="flex flex-wrap gap-1.5 mb-1">
-                  {/* Current User is always Leader */}
-                  <div className="flex items-center gap-1.5 rounded-full border border-kumo-brand/30 bg-kumo-brand/10 py-0.5 pl-1.5 pr-2.5 text-xs font-medium text-kumo-brand">
-                    <UserAvatar src={currentUser?.avatarUrl || null} name={currentUser?.name} size={16} />
-                    <span>{currentUser?.name}</span>
-                    <span className="text-[10px] text-kumo-brand/80 font-normal">(Leader)</span>
-                  </div>
-
-                  {selectedMemberIds.map((mId) => {
-                    const memberUser = contactsList.find((u) => u.id === mId);
-                    if (!memberUser) return null;
-                    return (
+                    {/* Circular Avatars Row: Creator first, then teammates */}
+                    <div className="flex items-center -space-x-1.5">
+                      {/* Current User (Owner / Creator) */}
                       <div
-                        key={mId}
-                        className="flex items-center gap-1.5 rounded-full border border-kumo-line bg-kumo-control py-0.5 pl-1.5 pr-2 text-xs font-medium text-kumo-default"
+                        title={`${currentUser?.name || "You"} (Owner)`}
+                        className="relative group transition-transform hover:z-10 hover:scale-110"
                       >
-                        <UserAvatar src={memberUser.avatarUrl || null} name={memberUser.name} size={16} />
-                        <span>{memberUser.name}</span>
-                        <button
-                          type="button"
-                          onClick={() => setSelectedMemberIds(selectedMemberIds.filter((id) => id !== mId))}
-                          className="text-kumo-subtle hover:text-red-500 ml-0.5"
-                        >
-                          <X weight="bold" size={11} />
-                        </button>
+                        <UserAvatar
+                          src={currentUser?.avatarUrl || null}
+                          name={currentUser?.name}
+                          size={22}
+                          className="rounded-full ring-2 ring-kumo-base"
+                        />
                       </div>
-                    );
-                  })}
+
+                      {/* Selected Invited Teammates */}
+                      {selectedMemberIds.map((mId) => {
+                        const memberUser = contactsList.find((u) => u.id === mId);
+                        if (!memberUser) return null;
+                        return (
+                          <div
+                            key={mId}
+                            title={`${memberUser.name} (Member) - Click to remove`}
+                            onClick={() => setSelectedMemberIds(selectedMemberIds.filter((id) => id !== mId))}
+                            className="relative group cursor-pointer transition-transform hover:z-10 hover:scale-110"
+                          >
+                            <UserAvatar
+                              src={memberUser.avatarUrl || null}
+                              name={memberUser.name}
+                              size={22}
+                              className="rounded-full ring-2 ring-kumo-base"
+                            />
+                            {/* Hover remove cross overlay */}
+                            <span className="absolute inset-0 flex items-center justify-center rounded-full bg-red-600/80 text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                              <X weight="bold" size={10} />
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
 
                 {/* Add Teammate Trigger */}
