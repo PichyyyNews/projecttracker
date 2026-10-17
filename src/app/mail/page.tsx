@@ -16,9 +16,10 @@ import {
   Plus,
   ArrowBendUpLeft,
   Lifebuoy,
-  Clock,
   Sparkle,
   ChatCircleText,
+  CaretDown,
+  Check,
 } from "@phosphor-icons/react";
 import UserAvatar from "@/components/UserAvatar";
 import AppNavbar from "@/components/AppNavbar";
@@ -70,6 +71,9 @@ export default function MailPage() {
     subject: "",
     content: "",
   });
+  const [recipientSearch, setRecipientSearch] = useState("");
+  const [isRecipientMenuOpen, setIsRecipientMenuOpen] = useState(false);
+  const recipientDropdownRef = useRef<HTMLDivElement>(null);
 
   // Reply state
   const [replyContent, setReplyContent] = useState("");
@@ -85,6 +89,24 @@ export default function MailPage() {
   useEffect(() => {
     loadMailData();
   }, []);
+
+  // Close recipient dropdown on outside click
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (
+        recipientDropdownRef.current &&
+        !recipientDropdownRef.current.contains(e.target as Node)
+      ) {
+        setIsRecipientMenuOpen(false);
+      }
+    };
+    if (isRecipientMenuOpen) {
+      document.addEventListener("mousedown", handleOutsideClick);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+    };
+  }, [isRecipientMenuOpen]);
 
   const loadMailData = async () => {
     try {
@@ -532,22 +554,141 @@ export default function MailPage() {
             </div>
 
             <form onSubmit={handleSendCompose} className="space-y-4">
-              <div className="grid gap-1.5">
+              <div className="grid gap-1.5 relative" ref={recipientDropdownRef}>
                 <label className="text-xs font-medium text-kumo-default">Recipient (ผู้รับ)</label>
-                <select
-                  value={composeData.receiverId}
-                  onChange={(e) => setComposeData({ ...composeData, receiverId: e.target.value })}
-                  className="w-full rounded-md border border-kumo-line bg-kumo-control py-2 px-3 text-xs text-kumo-default focus:border-kumo-brand focus:outline-none"
-                >
-                  <option value="system">College Administration - Support Ticket</option>
-                  <optgroup label="Colleagues & Mentors">
-                    {contactsList.map((contact) => (
-                      <option key={contact.id} value={contact.id}>
-                        {contact.name} ({USER_ROLES[contact.role as UserRole]?.label || contact.role}) - {contact.email}
-                      </option>
-                    ))}
-                  </optgroup>
-                </select>
+                
+                {/* Searchable input / Trigger */}
+                <div className="relative">
+                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-kumo-subtle">
+                    <MagnifyingGlass weight="thin" size={14} />
+                  </div>
+                  <input
+                    type="text"
+                    value={recipientSearch}
+                    onFocus={() => setIsRecipientMenuOpen(true)}
+                    onChange={(e) => {
+                      setRecipientSearch(e.target.value);
+                      setIsRecipientMenuOpen(true);
+                    }}
+                    placeholder="Search by name, role, email, or select from list..."
+                    className="w-full rounded-md border border-kumo-line bg-kumo-control py-2 pl-9 pr-8 text-xs text-kumo-default placeholder:text-kumo-subtle focus:border-kumo-brand focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setIsRecipientMenuOpen(!isRecipientMenuOpen)}
+                    className="absolute inset-y-0 right-0 flex items-center pr-2.5 text-kumo-subtle hover:text-kumo-default"
+                  >
+                    <CaretDown weight="thin" size={14} className={`transition-transform duration-200 ${isRecipientMenuOpen ? "rotate-180" : ""}`} />
+                  </button>
+                </div>
+
+                {/* Selected Recipient Pill Preview */}
+                <div className="flex items-center gap-2 rounded-md border border-kumo-line/60 bg-kumo-tint/40 px-3 py-1.5 text-xs">
+                  <span className="text-[11px] text-kumo-subtle">Sending to:</span>
+                  {composeData.receiverId === "system" ? (
+                    <div className="flex items-center gap-1.5 font-medium text-kumo-default">
+                      <div className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400">
+                        <Sparkle weight="thin" size={12} />
+                      </div>
+                      <span>College Administration</span>
+                      <span className="rounded bg-amber-500/10 px-1 py-0.2 text-[9px] text-amber-600 font-medium">
+                        Support Ticket
+                      </span>
+                    </div>
+                  ) : (
+                    (() => {
+                      const user = contactsList.find((c) => c.id.toString() === composeData.receiverId);
+                      return user ? (
+                        <div className="flex items-center gap-1.5 font-medium text-kumo-default">
+                          <UserAvatar src={user.avatarUrl || null} name={user.name} size={18} />
+                          <span>{user.name}</span>
+                          <span className="text-[10px] text-kumo-subtle">({user.email})</span>
+                          <Badge variant={USER_ROLES[user.role as UserRole]?.badgeVariant || "neutral"}>
+                            {USER_ROLES[user.role as UserRole]?.label || user.role}
+                          </Badge>
+                        </div>
+                      ) : (
+                        <span className="text-kumo-subtle italic">None</span>
+                      );
+                    })()
+                  )}
+                </div>
+
+                {/* Dropdown Suggestions List with Profile Photos */}
+                {isRecipientMenuOpen && (
+                  <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-60 overflow-y-auto rounded-md border border-kumo-line bg-kumo-base shadow-xl ring-1 ring-black/5 divide-y divide-kumo-line">
+                    {/* 1. System Support Ticket option */}
+                    {("college administration support ticket".includes(recipientSearch.toLowerCase()) || !recipientSearch.trim()) && (
+                      <div
+                        onClick={() => {
+                          setComposeData({ ...composeData, receiverId: "system" });
+                          setRecipientSearch("College Administration");
+                          setIsRecipientMenuOpen(false);
+                        }}
+                        className={`flex items-center justify-between p-2.5 cursor-pointer text-xs transition-colors ${
+                          composeData.receiverId === "system" ? "bg-kumo-tint font-medium" : "hover:bg-kumo-tint/60"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-100 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400">
+                            <Sparkle weight="thin" size={16} />
+                          </div>
+                          <div>
+                            <div className="font-semibold text-kumo-default">College Administration</div>
+                            <div className="text-[11px] text-kumo-subtle">Official Support Ticket to Admins</div>
+                          </div>
+                        </div>
+                        {composeData.receiverId === "system" && (
+                          <Check weight="bold" size={14} className="text-kumo-brand" />
+                        )}
+                      </div>
+                    )}
+
+                    {/* 2. Filtered User Contacts */}
+                    {contactsList
+                      .filter((contact) => {
+                        if (!recipientSearch.trim()) return true;
+                        const q = recipientSearch.toLowerCase();
+                        return (
+                          contact.name.toLowerCase().includes(q) ||
+                          contact.email.toLowerCase().includes(q) ||
+                          contact.role.toLowerCase().includes(q)
+                        );
+                      })
+                      .map((contact) => {
+                        const isSelected = composeData.receiverId === contact.id.toString();
+                        return (
+                          <div
+                            key={contact.id}
+                            onClick={() => {
+                              setComposeData({ ...composeData, receiverId: contact.id.toString() });
+                              setRecipientSearch(contact.name);
+                              setIsRecipientMenuOpen(false);
+                            }}
+                            className={`flex items-center justify-between p-2.5 cursor-pointer text-xs transition-colors ${
+                              isSelected ? "bg-kumo-tint font-medium" : "hover:bg-kumo-tint/60"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <UserAvatar src={contact.avatarUrl || null} name={contact.name} size={28} />
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="font-semibold text-kumo-default truncate">{contact.name}</span>
+                                  <Badge variant={USER_ROLES[contact.role as UserRole]?.badgeVariant || "neutral"}>
+                                    {USER_ROLES[contact.role as UserRole]?.label || contact.role}
+                                  </Badge>
+                                </div>
+                                <div className="text-[11px] text-kumo-subtle truncate">{contact.email}</div>
+                              </div>
+                            </div>
+                            {isSelected && (
+                              <Check weight="bold" size={14} className="text-kumo-brand shrink-0" />
+                            )}
+                          </div>
+                        );
+                      })}
+                  </div>
+                )}
               </div>
 
               <div className="grid gap-1.5">
