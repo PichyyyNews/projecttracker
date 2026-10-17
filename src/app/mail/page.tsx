@@ -539,7 +539,7 @@ export default function MailPage() {
                   onChange={(e) => setComposeData({ ...composeData, receiverId: e.target.value })}
                   className="w-full rounded-md border border-kumo-line bg-kumo-control py-2 px-3 text-xs text-kumo-default focus:border-kumo-brand focus:outline-none"
                 >
-                  <option value="system">🏢 College Administration (Support Ticket)</option>
+                  <option value="system">College Administration - Support Ticket</option>
                   <optgroup label="Colleagues & Mentors">
                     {contactsList.map((contact) => (
                       <option key={contact.id} value={contact.id}>
