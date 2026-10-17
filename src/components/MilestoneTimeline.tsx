@@ -358,11 +358,11 @@ export const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({
             return (
               <div className="relative flex items-center justify-between w-full">
                 {/* Background Track Line */}
-                <div className="absolute top-4 sm:top-[18px] left-4 right-4 sm:left-6 sm:right-6 h-0.5 -translate-y-1/2 bg-kumo-line z-0 pointer-events-none" />
+                <div className="absolute top-[18px] sm:top-5 left-4 right-4 sm:left-6 sm:right-6 h-0.5 -translate-y-1/2 bg-kumo-line z-0 pointer-events-none" />
 
                 {/* Dynamic Active Progress Fill Bar */}
                 <div
-                  className="absolute top-4 sm:top-[18px] left-4 sm:left-6 h-0.5 -translate-y-1/2 bg-gradient-to-r from-emerald-500 to-kumo-brand z-0 transition-all duration-500 ease-out pointer-events-none"
+                  className="absolute top-[18px] sm:top-5 left-4 sm:left-6 h-0.5 -translate-y-1/2 bg-gradient-to-r from-emerald-500 to-kumo-brand z-0 transition-all duration-500 ease-out pointer-events-none"
                   style={{
                     width: `calc((100% - ${typeof window !== "undefined" && window.innerWidth < 640 ? "32px" : "48px"}) * ${overallTrackPercent / 100})`,
                     maxWidth: "calc(100% - 32px)",
@@ -372,8 +372,8 @@ export const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({
                 {/* 0% Origin Node */}
                 <div className="relative z-10 flex flex-col items-center">
                   <div className="rounded-full bg-kumo-base p-1 ring-2 ring-emerald-500/20 shadow-xs">
-                    <div className="flex h-6 w-6 sm:h-7 sm:w-7 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400">
-                      <CheckCircle weight="fill" size={15} />
+                    <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400">
+                      <CheckCircle weight="fill" size={16} />
                     </div>
                   </div>
                   <span className="mt-1.5 text-[11px] sm:text-xs font-semibold text-kumo-default">0%</span>
@@ -388,24 +388,24 @@ export const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({
               const isNeedsRevision = m.status === "needs_revision";
               const isInProgress = m.status === "in_progress";
 
-              let iconNode = <Lock weight="bold" size={12} className="opacity-60" />;
+              let iconNode = <Lock weight="bold" size={13} className="opacity-60" />;
               let nodeBg = "bg-kumo-control/60 text-kumo-subtle";
               let ringColor = isSelected ? "ring-kumo-brand" : "ring-kumo-line";
 
               if (isApproved) {
-                iconNode = <CheckCircle weight="fill" size={15} />;
+                iconNode = <CheckCircle weight="fill" size={16} />;
                 nodeBg = "bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400";
                 ringColor = isSelected ? "ring-emerald-500" : "ring-emerald-500/30";
               } else if (isPending) {
-                iconNode = <Clock weight="fill" size={15} />;
+                iconNode = <Clock weight="fill" size={16} />;
                 nodeBg = "bg-amber-500/10 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400 animate-pulse";
                 ringColor = isSelected ? "ring-amber-500" : "ring-amber-500/30";
               } else if (isNeedsRevision) {
-                iconNode = <WarningCircle weight="fill" size={15} />;
+                iconNode = <WarningCircle weight="fill" size={16} />;
                 nodeBg = "bg-rose-500/10 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400";
                 ringColor = isSelected ? "ring-rose-500" : "ring-rose-500/30";
               } else if (isInProgress) {
-                iconNode = <Sparkle weight="fill" size={15} />;
+                iconNode = <Sparkle weight="fill" size={16} />;
                 nodeBg = "bg-kumo-brand/10 text-kumo-brand dark:bg-kumo-brand/20";
                 ringColor = isSelected ? "ring-kumo-brand" : "ring-kumo-brand/30";
               }
@@ -414,15 +414,13 @@ export const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({
                 <div
                   key={m.id}
                   onClick={() => setSelectedMilestone(m)}
-                  className={`relative z-10 flex flex-col items-center cursor-pointer group transition-all ${
-                    isSelected ? "scale-105" : "hover:scale-105"
-                  }`}
+                  className="relative z-10 flex flex-col items-center cursor-pointer group"
                 >
                   <div
                     className={`rounded-full bg-kumo-base p-1 ring-2 transition-all shadow-xs ${ringColor}`}
                   >
                     <div
-                      className={`flex h-6 w-6 sm:h-7 sm:w-7 items-center justify-center rounded-full ${nodeBg}`}
+                      className={`flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full ${nodeBg}`}
                     >
                       {iconNode}
                     </div>
