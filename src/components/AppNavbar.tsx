@@ -51,7 +51,8 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     if (!currentUser) return;
 
     let isMounted = true;
-    let lastKnownUnreadCount = 0;
+    let isInitialLoad = true;
+    let lastKnownMaxId = 0;
 
     const checkMessages = async () => {
       try {
@@ -64,19 +65,30 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
           );
           setUnreadCount(unread.length);
 
-          // If there is a new incoming unread message and not on /mail, trigger toast
-          if (unread.length > lastKnownUnreadCount && pathname !== "/mail") {
-            const newest = unread[0];
-            setToastNotification({
-              id: newest.id,
-              subject: newest.subject,
-              senderName: newest.sender?.name || "System",
-            });
-            setTimeout(() => {
-              if (isMounted) setToastNotification(null);
-            }, 6000);
+          const currentMaxId = unread.reduce((max: number, m: any) => Math.max(max, m.id), 0);
+
+          // On initial load / refresh: just record current messages, NEVER trigger popup
+          if (isInitialLoad) {
+            lastKnownMaxId = currentMaxId;
+            isInitialLoad = false;
+            return;
           }
-          lastKnownUnreadCount = unread.length;
+
+          // On subsequent polls: only trigger toast if there is a NEW message ID greater than last known
+          if (currentMaxId > lastKnownMaxId && pathname !== "/mail") {
+            const newest = unread.find((m: any) => m.id === currentMaxId);
+            if (newest) {
+              setToastNotification({
+                id: newest.id,
+                subject: newest.subject,
+                senderName: newest.sender?.name || "System",
+              });
+              setTimeout(() => {
+                if (isMounted) setToastNotification(null);
+              }, 6000);
+            }
+          }
+          lastKnownMaxId = Math.max(lastKnownMaxId, currentMaxId);
         }
       } catch (err) {
         // quiet error on background poll
@@ -221,37 +233,37 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
         </div>
       </div>
 
-      {/* Floating Responsive Toast Notification for New Incoming Messages */}
+      {/* Floating Lightweight Responsive Toast Notification for New Incoming Messages */}
       {toastNotification && (
         <aside
           role="status"
-          className="fixed z-50 transition-all duration-300 ease-out top-4 left-4 right-4 sm:top-auto sm:left-auto sm:bottom-6 sm:right-6 sm:w-auto"
+          className="fixed z-50 top-3 left-3 right-3 sm:top-auto sm:left-auto sm:bottom-6 sm:right-6 sm:w-auto transition-transform duration-200 ease-out animate-in fade-in slide-in-from-top-2 sm:slide-in-from-bottom-2"
         >
-          <div className="flex items-center gap-3 rounded-lg border border-kumo-line bg-kumo-base/95 backdrop-blur-md px-4 py-3 text-xs font-medium shadow-xl ring-1 ring-black/5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-kumo-brand/10 text-kumo-brand shrink-0">
-              <EnvelopeSimple weight="thin" size={18} />
+          <div className="flex items-center gap-2.5 rounded-lg border border-kumo-line bg-kumo-base px-3.5 py-2.5 text-xs font-medium shadow-lg ring-1 ring-black/5">
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400 shrink-0">
+              <EnvelopeSimple weight="thin" size={16} />
             </div>
-            <div className="flex flex-col min-w-0 pr-2">
-              <span className="font-semibold text-kumo-default">
+            <div className="flex flex-col min-w-0 pr-1 flex-1">
+              <span className="font-semibold text-kumo-default truncate text-[11px] sm:text-xs">
                 New message from {toastNotification.senderName}
               </span>
-              <span className="text-[11px] text-kumo-subtle truncate max-w-[240px]">
+              <span className="text-[10px] sm:text-[11px] text-kumo-subtle truncate max-w-[200px] sm:max-w-[240px]">
                 {toastNotification.subject}
               </span>
             </div>
             <Link
               href="/mail"
               onClick={() => setToastNotification(null)}
-              className="rounded bg-kumo-brand px-2.5 py-1 text-xs font-semibold text-white hover:bg-kumo-brand/90 transition-none"
+              className="rounded bg-kumo-brand px-2.5 py-1 text-[11px] sm:text-xs font-semibold text-white hover:bg-kumo-brand/90 shrink-0"
             >
               Read
             </Link>
             <button
               type="button"
               onClick={() => setToastNotification(null)}
-              className="text-kumo-subtle hover:text-kumo-default"
+              className="text-kumo-subtle hover:text-kumo-default p-1 shrink-0"
             >
-              <X weight="bold" size={14} />
+              <X weight="bold" size={12} />
             </button>
           </div>
         </aside>
