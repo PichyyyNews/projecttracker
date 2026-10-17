@@ -415,7 +415,7 @@ export default function HomePage() {
             <form onSubmit={handleCreateProject} className="space-y-4">
               {/* Project Title */}
               <div className="grid gap-1.5">
-                <label className="text-xs font-medium text-kumo-default">Project title (หัวข้อโปรเจค)</label>
+                <label className="text-xs font-medium text-kumo-default">Project title</label>
                 <input
                   type="text"
                   required
@@ -428,20 +428,20 @@ export default function HomePage() {
 
               {/* Subject / Course Name */}
               <div className="grid gap-1.5">
-                <label className="text-xs font-medium text-kumo-default">Course name (ชื่อวิชา)</label>
+                <label className="text-xs font-medium text-kumo-default">Course name</label>
                 <input
                   type="text"
                   required
                   value={subjectName}
                   onChange={(e) => setSubjectName(e.target.value)}
-                  placeholder="e.g. โครงงานเทคโนโลยีคอมพิวเตอร์ 1 (Computer Technology Project I)"
+                  placeholder="e.g. Computer Technology Project I"
                   className="w-full rounded-md border border-kumo-line bg-kumo-control py-2 px-3 text-xs text-kumo-default placeholder:text-kumo-subtle focus:border-kumo-brand focus:outline-none"
                 />
               </div>
 
               {/* Description */}
               <div className="grid gap-1.5">
-                <label className="text-xs font-medium text-kumo-default">Description (รายละเอียด)</label>
+                <label className="text-xs font-medium text-kumo-default">Description</label>
                 <textarea
                   rows={3}
                   value={projectDescription}
@@ -454,7 +454,7 @@ export default function HomePage() {
               {/* Advisor Selection (Dropdown & Role Filtering) */}
               <div className="grid gap-1.5 relative" ref={advisorDropdownRef}>
                 <label className="text-xs font-medium text-kumo-default">
-                  Project advisor (อาจารย์ที่ปรึกษา)
+                  Project advisor
                 </label>
 
                 {/* Unified Advisor Box */}
@@ -581,7 +581,7 @@ export default function HomePage() {
               {/* Members Selection (Student Teammates) */}
               <div className="grid gap-1.5 relative" ref={memberDropdownRef}>
                 <label className="text-xs font-medium text-kumo-default">
-                  Project members (สมาชิกกลุ่ม)
+                  Project members
                 </label>
 
                 {/* Selected Members Chips */}

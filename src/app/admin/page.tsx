@@ -1313,7 +1313,7 @@ export default function AdminPage() {
                 <LayerCard className="p-5 ring ring-kumo-line rounded-lg bg-kumo-base">
                   <div className="mb-4 flex items-center justify-between">
                     <div>
-                      <h2 className="text-sm font-semibold text-kumo-default">Departments (แผนกวิชา)</h2>
+                      <h2 className="text-sm font-semibold text-kumo-default">Departments</h2>
                       <p className="text-xs text-kumo-subtle">
                         {departmentsList.length} departments available
                       </p>
@@ -1354,7 +1354,7 @@ export default function AdminPage() {
                 {/* Add Academic Class Form */}
                 <LayerCard className="p-5 ring ring-kumo-line rounded-lg bg-kumo-base">
                   <h2 className="mb-1 text-sm font-semibold text-kumo-default">
-                    Add new class group (เพิ่มชั้นปี/กลุ่ม/สาขา)
+                    Add new class group
                   </h2>
                   <p className="mb-4 text-xs text-kumo-subtle">
                     Creates an option in the student profile registration dropdown.
@@ -1363,7 +1363,7 @@ export default function AdminPage() {
                   <form onSubmit={handleAddAcademicClass} className="grid gap-3">
                     <div className="grid grid-cols-2 gap-2">
                       <div className="grid gap-1">
-                        <label className="text-xs font-medium text-kumo-default">Year Level (ชั้นปี)</label>
+                        <label className="text-xs font-medium text-kumo-default">Year Level</label>
                         <select
                           value={newClassYear}
                           onChange={(e) => setNewClassYear(e.target.value)}
@@ -1378,7 +1378,7 @@ export default function AdminPage() {
                       </div>
 
                       <div className="grid gap-1">
-                        <label className="text-xs font-medium text-kumo-default">Group (กลุ่มเรียน)</label>
+                        <label className="text-xs font-medium text-kumo-default">Group</label>
                         <input
                           type="text"
                           placeholder="e.g. 1, 2, 3"
@@ -1391,10 +1391,10 @@ export default function AdminPage() {
                     </div>
 
                     <div className="grid gap-1">
-                      <label className="text-xs font-medium text-kumo-default">Major Name (สาขาวิชา)</label>
+                      <label className="text-xs font-medium text-kumo-default">Major Name</label>
                       <input
                         type="text"
-                        placeholder="e.g. เทคโนโลยีคอมพิวเตอร์ (สทค)"
+                        placeholder="e.g. Computer Technology"
                         value={newClassMajor}
                         onChange={(e) => setNewClassMajor(e.target.value)}
                         required

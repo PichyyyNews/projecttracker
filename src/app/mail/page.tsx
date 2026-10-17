@@ -332,7 +332,7 @@ export default function MailPage() {
                 }`}
               >
                 <Tray weight="thin" size={15} />
-                <span>Inbox (กล่องเข้า)</span>
+                <span>Inbox</span>
               </button>
               <button
                 type="button"
@@ -344,7 +344,7 @@ export default function MailPage() {
                 }`}
               >
                 <PaperPlaneTilt weight="thin" size={15} />
-                <span>Sent (ที่ส่งแล้ว)</span>
+                <span>Sent</span>
               </button>
             </div>
 
@@ -607,18 +607,18 @@ export default function MailPage() {
                         )}
                         <span>
                           {selectedMessage.invitationInfo.status === "accepted"
-                            ? "คำเชิญได้รับการตอบรับแล้ว (Accepted)"
+                            ? "Invitation Accepted"
                             : selectedMessage.invitationInfo.status === "rejected"
-                            ? "คำเชิญถูกปฏิเสธ (Declined)"
-                            : "รอการตอบรับจากผู้รับ (Pending Response)"}
+                            ? "Invitation Declined"
+                            : "Pending Response"}
                         </span>
                       </div>
                       <p className="opacity-90 leading-relaxed text-[11px] sm:text-xs">
                         {selectedMessage.invitationInfo.status === "accepted"
-                          ? `${selectedMessage.receiver?.name || "ผู้รับ"} ได้ยอมรับเข้าร่วมเป็น ${selectedMessage.invitationInfo.role} ในโปรเจกต์นี้แล้ว`
+                          ? `${selectedMessage.receiver?.name || "Recipient"} has accepted to join as ${selectedMessage.invitationInfo.role} in this project.`
                           : selectedMessage.invitationInfo.status === "rejected"
-                          ? `${selectedMessage.receiver?.name || "ผู้รับ"} ได้ปฏิเสธคำเชิญนี้`
-                          : `คำเชิญได้ส่งไปยัง ${selectedMessage.receiver?.name || "ผู้รับ"} เรียบร้อยแล้ว กำลังรอให้กดยืนยันหรือปฏิเสธ`}
+                          ? `${selectedMessage.receiver?.name || "Recipient"} has declined this invitation.`
+                          : `Invitation was sent to ${selectedMessage.receiver?.name || "Recipient"}. Awaiting confirmation or decline.`}
                       </p>
                     </div>
                   )}
@@ -652,8 +652,8 @@ export default function MailPage() {
                                 <CheckCircle weight="fill" size={16} />
                                 <span>
                                   {selectedMessage.invitationInfo?.status === "accepted"
-                                    ? "คุณได้ตอบรับคำเชิญนี้เรียบร้อยแล้ว"
-                                    : "คุณได้ปฏิเสธคำเชิญนี้เรียบร้อยแล้ว"}
+                                    ? "You have accepted this invitation."
+                                    : "You have declined this invitation."}
                                 </span>
                               </div>
                             </div>
@@ -818,7 +818,7 @@ export default function MailPage() {
 
             <form onSubmit={handleSendCompose} className="space-y-4">
               <div className="grid gap-1.5 relative" ref={recipientDropdownRef}>
-                <label className="text-xs font-medium text-kumo-default">Recipient (ผู้รับ)</label>
+                <label className="text-xs font-medium text-kumo-default">Recipient</label>
                 
                 {/* Unified Searchable Input with Inline Selected Recipient Profile */}
                 <div
@@ -962,7 +962,7 @@ export default function MailPage() {
               </div>
 
               <div className="grid gap-1.5">
-                <label className="text-xs font-medium text-kumo-default">Subject (หัวข้อ)</label>
+                <label className="text-xs font-medium text-kumo-default">Subject</label>
                 <input
                   type="text"
                   required
@@ -974,7 +974,7 @@ export default function MailPage() {
               </div>
 
               <div className="grid gap-1.5">
-                <label className="text-xs font-medium text-kumo-default">Message content (ข้อความ)</label>
+                <label className="text-xs font-medium text-kumo-default">Message content</label>
                 <textarea
                   rows={5}
                   required
