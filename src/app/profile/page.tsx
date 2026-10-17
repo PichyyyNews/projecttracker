@@ -255,7 +255,7 @@ export default function ProfilePage() {
       <AppNavbar currentUser={currentUser} />
 
       {/* Main Content Area */}
-      <main className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
+      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-8 sm:px-6">
 
         <form onSubmit={handleSaveProfile} className="space-y-6">
           <LayerCard className="p-8 ring ring-kumo-line rounded-xl bg-kumo-base shadow-sm">

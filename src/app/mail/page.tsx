@@ -299,8 +299,8 @@ export default function MailPage() {
       <AppNavbar currentUser={currentUser} subtitle="Mail & Communications" />
 
       {/* Main Mail Layout */}
-      <main className="mx-auto flex w-full max-w-3xl flex-1 px-0 py-0 sm:px-6 sm:py-10">
-        <LayerCard className="flex w-full flex-col overflow-hidden rounded-none border-0 bg-kumo-base shadow-none sm:rounded-xl sm:border sm:border-kumo-line sm:shadow-sm md:flex-row h-[calc(100dvh-57px)] sm:h-[680px]">
+      <main className="mx-auto flex w-full max-w-6xl flex-1 px-0 py-0 sm:px-6 sm:py-8">
+        <LayerCard className="flex w-full flex-col overflow-hidden rounded-none border-0 bg-kumo-base shadow-none sm:rounded-xl sm:border sm:border-kumo-line sm:shadow-sm md:flex-row h-[calc(100dvh-57px)] sm:h-[720px]">
           {/* Left Column: Sidebar / Message List (hidden on mobile when viewing detail) */}
           <div
             className={`flex w-full flex-col border-b border-kumo-line md:w-80 md:border-b-0 md:border-r h-full ${
