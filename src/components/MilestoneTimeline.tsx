@@ -488,13 +488,13 @@ export const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({
               />
             </div>
 
-            {/* Action Submit Button */}
+            {/* Action Submit Button - Sticky at bottom so no need to scroll */}
             {selectedMilestone.status !== "approved" && selectedMilestone.status !== "locked" && (
-              <div className="flex items-center justify-between pt-3 border-t border-kumo-line">
+              <div className="sticky bottom-0 z-20 -mx-6 -mb-6 mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-t border-kumo-line bg-kumo-base/95 p-4 sm:px-6 backdrop-blur-md rounded-b-xl shadow-lg ring-1 ring-black/5">
                 <span className="text-[11px] text-kumo-subtle">
                   Submitting will generate a secure QR code for onsite advisor inspection.
                 </span>
-                <Button variant="primary" size="sm" type="submit" disabled={submitting}>
+                <Button variant="primary" size="sm" type="submit" disabled={submitting} className="shrink-0 w-full sm:w-auto">
                   <PaperPlaneTilt weight="thin" size={14} className="mr-1.5" />
                   <span>{submitting ? "Submitting..." : "Submit & Get Onsite QR"}</span>
                 </Button>
