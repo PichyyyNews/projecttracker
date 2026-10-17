@@ -385,7 +385,7 @@ export default function HomePage() {
                       title={`Status: ${project.status}`}
                       className={`flex h-6 w-6 items-center justify-center rounded-full transition-colors ${
                         project.status === "active"
-                          ? "bg-green-500/10 text-green-600 dark:text-green-400"
+                          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                           : project.status === "completed"
                           ? "bg-blue-500/10 text-blue-600 dark:text-blue-400"
                           : project.status === "rejected"

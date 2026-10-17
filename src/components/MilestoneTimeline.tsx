@@ -184,7 +184,7 @@ export const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({
 
           {/* 0% Origin Node */}
           <div className="relative z-10 flex flex-col items-center">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-500/10 text-green-600 ring-4 ring-kumo-base">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 ring-4 ring-kumo-base">
               <CheckCircle weight="fill" size={18} />
             </div>
             <span className="mt-2 text-[11px] font-semibold text-kumo-default">0%</span>
@@ -205,13 +205,13 @@ export const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({
 
             if (isApproved) {
               iconNode = <CheckCircle weight="fill" size={18} />;
-              nodeBg = "bg-green-500/10 text-green-600";
+              nodeBg = "bg-emerald-500/10 text-emerald-600";
             } else if (isPending) {
               iconNode = <Clock weight="fill" size={18} />;
               nodeBg = "bg-amber-500/10 text-amber-600 animate-pulse";
             } else if (isNeedsRevision) {
               iconNode = <WarningCircle weight="fill" size={18} />;
-              nodeBg = "bg-red-500/10 text-red-600";
+              nodeBg = "bg-rose-500/10 text-rose-600";
             } else if (isInProgress) {
               iconNode = <Sparkle weight="fill" size={18} />;
               nodeBg = "bg-kumo-brand/10 text-kumo-brand";
@@ -321,8 +321,8 @@ export const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({
             <div
               className={`rounded-lg border p-4 text-xs ${
                 selectedMilestone.status === "approved"
-                  ? "border-green-500/30 bg-green-500/5 text-green-900 dark:text-green-300"
-                  : "border-red-500/30 bg-red-500/5 text-red-900 dark:text-red-300"
+                  ? "border-emerald-600/20 bg-emerald-500/5 text-emerald-800 dark:text-emerald-300"
+                  : "border-rose-600/20 bg-rose-500/5 text-rose-800 dark:text-rose-300"
               }`}
             >
               <div className="flex items-center gap-2 font-semibold mb-1">

@@ -485,10 +485,10 @@ export default function MailPage() {
                           <span
                             className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium ${
                               m.invitationInfo.status === "accepted"
-                                ? "bg-green-500/10 text-green-600 dark:text-green-400"
+                                ? "border border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
                                 : m.invitationInfo.status === "rejected"
-                                ? "bg-red-500/10 text-red-600 dark:text-red-400"
-                                : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                                ? "border border-red-500/20 bg-red-500/10 text-red-700 dark:text-red-400"
+                                : "border border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-400"
                             }`}
                           >
                             {m.invitationInfo.status === "accepted"
@@ -590,15 +590,15 @@ export default function MailPage() {
                     <div
                       className={`rounded-lg border p-3.5 sm:p-4 text-xs ${
                         selectedMessage.invitationInfo.status === "accepted"
-                          ? "border-green-500/30 bg-green-500/5 text-green-800 dark:text-green-300"
+                          ? "border-emerald-600/20 bg-emerald-500/5 text-emerald-800 dark:text-emerald-300"
                           : selectedMessage.invitationInfo.status === "rejected"
-                          ? "border-red-500/30 bg-red-500/5 text-red-800 dark:text-red-300"
-                          : "border-amber-500/30 bg-amber-500/5 text-amber-800 dark:text-amber-300"
+                          ? "border-red-600/20 bg-red-500/5 text-red-800 dark:text-red-300"
+                          : "border-amber-600/20 bg-amber-500/5 text-amber-800 dark:text-amber-300"
                       }`}
                     >
                       <div className="font-semibold mb-1 flex items-center gap-2">
                         {selectedMessage.invitationInfo.status === "accepted" ? (
-                          <CheckCircle weight="fill" size={16} className="text-green-600 dark:text-green-400" />
+                          <CheckCircle weight="fill" size={16} className="text-emerald-600 dark:text-emerald-400" />
                         ) : selectedMessage.invitationInfo.status === "rejected" ? (
                           <WarningCircle weight="fill" size={16} className="text-red-600 dark:text-red-400" />
                         ) : (
@@ -612,7 +612,7 @@ export default function MailPage() {
                             : "Pending Response"}
                         </span>
                       </div>
-                      <p className="opacity-90 leading-relaxed text-[11px] sm:text-xs">
+                      <p className="opacity-90 leading-relaxed text-[11px] sm:text-xs text-kumo-subtle">
                         {selectedMessage.invitationInfo.status === "accepted"
                           ? `${selectedMessage.receiver?.name || "Recipient"} has accepted to join as ${selectedMessage.invitationInfo.role} in this project.`
                           : selectedMessage.invitationInfo.status === "rejected"
@@ -643,12 +643,20 @@ export default function MailPage() {
                             <div
                               className={`rounded-lg border p-3.5 sm:p-4 text-xs ${
                                 selectedMessage.invitationInfo?.status === "accepted"
-                                  ? "border-green-500/30 bg-green-500/5 text-green-800 dark:text-green-300"
-                                  : "border-red-500/30 bg-red-500/5 text-red-800 dark:text-red-300"
+                                  ? "border-emerald-600/20 bg-emerald-500/5 text-emerald-800 dark:text-emerald-300"
+                                  : "border-red-600/20 bg-red-500/5 text-red-800 dark:text-red-300"
                               }`}
                             >
-                              <div className="font-semibold mb-1 flex items-center gap-2">
-                                <CheckCircle weight="fill" size={16} />
+                              <div className="font-semibold flex items-center gap-2">
+                                <CheckCircle
+                                  weight="fill"
+                                  size={16}
+                                  className={
+                                    selectedMessage.invitationInfo?.status === "accepted"
+                                      ? "text-emerald-600 dark:text-emerald-400"
+                                      : "text-red-600 dark:text-red-400"
+                                  }
+                                />
                                 <span>
                                   {selectedMessage.invitationInfo?.status === "accepted"
                                     ? "You have accepted this invitation."
