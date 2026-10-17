@@ -29,6 +29,11 @@ import {
   Check,
   FolderOpen,
   Kanban,
+  PaperPlaneTilt,
+  PencilSimple,
+  Megaphone,
+  Funnel,
+  X,
 } from "@phosphor-icons/react";
 import UserAvatar from "@/components/UserAvatar";
 import { USER_ROLES, ROLE_OPTIONS, UserRole } from "@/lib/roles";
@@ -123,7 +128,36 @@ interface AdminProjectItem {
   }>;
 }
 
-type AdminSection = "users" | "projects" | "tickets" | "academic" | "minio" | "google" | "overview" | "system";
+interface AdminMessageItem {
+  id: number;
+  senderId: number | null;
+  receiverId: number | null;
+  subject: string;
+  content: string;
+  type: string;
+  status: string;
+  parentId: number | null;
+  createdAt: string;
+  updatedAt: string;
+  sender?: {
+    id: number;
+    name: string;
+    email: string;
+    role: string;
+    avatarUrl?: string | null;
+    studentId?: string | null;
+  } | null;
+  receiver?: {
+    id: number;
+    name: string;
+    email: string;
+    role: string;
+    avatarUrl?: string | null;
+    studentId?: string | null;
+  } | null;
+}
+
+type AdminSection = "users" | "projects" | "tickets" | "messages" | "academic" | "minio" | "google" | "overview" | "system";
 
 export default function AdminPage() {
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
@@ -135,6 +169,7 @@ export default function AdminPage() {
   const [activeSection, setActiveSection] = useState<AdminSection>("users");
   const [usersList, setUsersList] = useState<AdminUser[]>([]);
   const [ticketsList, setTicketsList] = useState<TicketItem[]>([]);
+  const [messagesList, setMessagesList] = useState<AdminMessageItem[]>([]);
   const [projectsList, setProjectsList] = useState<AdminProjectItem[]>([]);
   const [googleConfig, setGoogleConfig] = useState<GoogleConfigData>({
     google_client_id: "",
@@ -168,6 +203,22 @@ export default function AdminPage() {
   const [ticketReplyText, setTicketReplyText] = useState("");
   const [ticketActionLoading, setTicketActionLoading] = useState(false);
 
+  // Mail Control State
+  const [selectedAdminMessage, setSelectedAdminMessage] = useState<AdminMessageItem | null>(null);
+  const [mailSearchQuery, setMailSearchQuery] = useState("");
+  const [mailTypeFilter, setMailTypeFilter] = useState<string>("all");
+  const [isBroadcastModalOpen, setIsBroadcastModalOpen] = useState(false);
+  const [broadcastTarget, setBroadcastTarget] = useState<"broadcast" | "direct">("broadcast");
+  const [broadcastReceiverId, setBroadcastReceiverId] = useState<string>("");
+  const [broadcastSubject, setBroadcastSubject] = useState("");
+  const [broadcastContent, setBroadcastContent] = useState("");
+  const [broadcastSending, setBroadcastSending] = useState(false);
+  const [editingMessage, setEditingMessage] = useState<AdminMessageItem | null>(null);
+  const [editSubject, setEditSubject] = useState("");
+  const [editContent, setEditContent] = useState("");
+  const [editStatus, setEditStatus] = useState("unread");
+  const [editSaving, setEditSaving] = useState(false);
+
   // Check initial PIN authorization
   useEffect(() => {
     async function checkAuth() {
@@ -187,13 +238,14 @@ export default function AdminPage() {
 
   const loadAdminData = async () => {
     try {
-      const [uRes, gRes, mRes, aRes, tRes, pRes] = await Promise.all([
+      const [uRes, gRes, mRes, aRes, tRes, pRes, msgRes] = await Promise.all([
         fetch("/api/admin/users"),
         fetch("/api/admin/google-config"),
         fetch("/api/admin/minio-config"),
         fetch("/api/admin/academic"),
         fetch("/api/admin/tickets"),
         fetch("/api/admin/projects"),
+        fetch("/api/admin/messages"),
       ]);
 
       if (uRes.ok) {
@@ -227,6 +279,11 @@ export default function AdminPage() {
       if (pRes.ok) {
         const pData = await pRes.json();
         if (pData.success) setProjectsList(pData.data);
+      }
+
+      if (msgRes.ok) {
+        const msgData = await msgRes.json();
+        if (msgData.success) setMessagesList(msgData.data);
       }
     } catch (err) {
       console.error("Failed to load admin data", err);
@@ -366,6 +423,122 @@ export default function AdminPage() {
       alert("Error sending ticket reply");
     } finally {
       setTicketActionLoading(false);
+    }
+  };
+
+  // Mail Control Handlers
+  const handleSendBroadcast = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!broadcastSubject.trim() || !broadcastContent.trim()) return;
+
+    setBroadcastSending(true);
+    try {
+      const res = await fetch("/api/admin/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          target: broadcastTarget,
+          receiverId: broadcastTarget === "direct" ? broadcastReceiverId : null,
+          subject: broadcastSubject.trim(),
+          content: broadcastContent.trim(),
+          type: "system",
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || "Failed to send message");
+
+      // Reload messages list
+      const updatedRes = await fetch("/api/admin/messages");
+      if (updatedRes.ok) {
+        const uMsg = await updatedRes.json();
+        if (uMsg.success) setMessagesList(uMsg.data);
+      }
+
+      setIsBroadcastModalOpen(false);
+      setBroadcastSubject("");
+      setBroadcastContent("");
+      setBroadcastReceiverId("");
+      alert(broadcastTarget === "broadcast" ? "Broadcast sent to all users successfully!" : "Message sent successfully!");
+    } catch (err: any) {
+      alert(err.message || "Failed to send message");
+    } finally {
+      setBroadcastSending(false);
+    }
+  };
+
+  const handleOpenEditMessage = (msg: AdminMessageItem) => {
+    setEditingMessage(msg);
+    setEditSubject(msg.subject);
+    setEditContent(msg.content);
+    setEditStatus(msg.status);
+  };
+
+  const handleSaveEditMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingMessage || !editSubject.trim() || !editContent.trim()) return;
+
+    setEditSaving(true);
+    try {
+      const res = await fetch("/api/admin/messages", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: editingMessage.id,
+          subject: editSubject.trim(),
+          content: editContent.trim(),
+          status: editStatus,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || "Failed to update message");
+
+      // Update in local state
+      setMessagesList((prev) =>
+        prev.map((m) =>
+          m.id === editingMessage.id
+            ? { ...m, subject: editSubject.trim(), content: editContent.trim(), status: editStatus, updatedAt: new Date().toISOString() }
+            : m
+        )
+      );
+
+      if (selectedAdminMessage && selectedAdminMessage.id === editingMessage.id) {
+        setSelectedAdminMessage({
+          ...selectedAdminMessage,
+          subject: editSubject.trim(),
+          content: editContent.trim(),
+          status: editStatus,
+        });
+      }
+
+      setEditingMessage(null);
+      alert("Message updated successfully!");
+    } catch (err: any) {
+      alert(err.message || "Failed to edit message");
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
+  const handleDeleteMessage = async (id: number) => {
+    if (!confirm(`Are you sure you want to permanently delete message #${id}?`)) return;
+
+    try {
+      const res = await fetch(`/api/admin/messages?id=${id}`, {
+        method: "DELETE",
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || "Failed to delete message");
+
+      setMessagesList((prev) => prev.filter((m) => m.id !== id));
+      if (selectedAdminMessage && selectedAdminMessage.id === id) {
+        setSelectedAdminMessage(null);
+      }
+      alert("Message deleted successfully!");
+    } catch (err: any) {
+      alert(err.message || "Failed to delete message");
     }
   };
 
@@ -626,6 +799,22 @@ export default function AdminPage() {
                 ) : (
                   <Badge variant="neutral">{ticketsList.length}</Badge>
                 )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => { setActiveSection("messages"); setSaveMessage(null); }}
+                className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition-none ${
+                  activeSection === "messages"
+                    ? "bg-kumo-tint text-kumo-brand"
+                    : "text-kumo-default hover:bg-kumo-tint"
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <EnvelopeSimple weight="thin" size={18} />
+                  <span>Mail control</span>
+                </div>
+                <Badge variant="neutral">{messagesList.length}</Badge>
               </button>
 
               <button
@@ -1293,6 +1482,496 @@ export default function AdminPage() {
                   )}
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* MAIL CONTROL MANAGEMENT VIEW */}
+          {activeSection === "messages" && (
+            <div className="grid gap-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex flex-col gap-1">
+                  <h1 className="text-xl font-semibold text-kumo-default">
+                    Mail & communications control
+                  </h1>
+                  <p className="text-xs text-kumo-subtle">
+                    Monitor, inspect, edit, delete, or broadcast system-wide messages to all registered users.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => {
+                      setBroadcastTarget("broadcast");
+                      setBroadcastSubject("");
+                      setBroadcastContent("");
+                      setBroadcastReceiverId("");
+                      setIsBroadcastModalOpen(true);
+                    }}
+                  >
+                    <Megaphone weight="thin" size={16} className="mr-1.5" />
+                    <span>Broadcast to all</span>
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => {
+                      setBroadcastTarget("direct");
+                      setBroadcastSubject("");
+                      setBroadcastContent("");
+                      setBroadcastReceiverId(usersList[0]?.id?.toString() || "");
+                      setIsBroadcastModalOpen(true);
+                    }}
+                  >
+                    <PaperPlaneTilt weight="thin" size={16} className="mr-1.5" />
+                    <span>Send message</span>
+                  </Button>
+                </div>
+              </div>
+
+              {/* Search & Type Filter Bar */}
+              <div className="flex flex-col sm:flex-row gap-2.5">
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    placeholder="Search by sender, recipient, subject, or content..."
+                    value={mailSearchQuery}
+                    onChange={(e) => setMailSearchQuery(e.target.value)}
+                    className="w-full rounded border border-kumo-line bg-kumo-control py-1.5 px-3 text-xs text-kumo-default placeholder:text-kumo-subtle focus:border-kumo-brand focus:outline-none"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Funnel weight="thin" size={14} className="text-kumo-subtle" />
+                  <select
+                    value={mailTypeFilter}
+                    onChange={(e) => setMailTypeFilter(e.target.value)}
+                    className="rounded border border-kumo-line bg-kumo-control py-1.5 px-2.5 text-xs text-kumo-default focus:border-kumo-brand focus:outline-none"
+                  >
+                    <option value="all">All message types</option>
+                    <option value="direct">Direct</option>
+                    <option value="system">System</option>
+                    <option value="ticket">Ticket</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Main Mail Grid: Table & Message Details Pane */}
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+                {/* Messages List Table */}
+                <div className="lg:col-span-7">
+                  <LayerCard className="p-0 ring ring-kumo-line rounded-lg bg-kumo-base overflow-hidden">
+                    <Table>
+                      <Table.Header>
+                        <Table.Row>
+                          <Table.Head>From / To</Table.Head>
+                          <Table.Head>Subject & Type</Table.Head>
+                          <Table.Head>Status</Table.Head>
+                          <Table.Head>Date</Table.Head>
+                          <Table.Head className="text-right">Actions</Table.Head>
+                        </Table.Row>
+                      </Table.Header>
+                      <Table.Body>
+                        {(() => {
+                          const filtered = messagesList.filter((m) => {
+                            if (mailTypeFilter !== "all" && m.type !== mailTypeFilter) return false;
+                            if (!mailSearchQuery.trim()) return true;
+                            const q = mailSearchQuery.toLowerCase();
+                            return (
+                              m.subject.toLowerCase().includes(q) ||
+                              m.content.toLowerCase().includes(q) ||
+                              (m.sender?.name && m.sender.name.toLowerCase().includes(q)) ||
+                              (m.receiver?.name && m.receiver.name.toLowerCase().includes(q))
+                            );
+                          });
+
+                          if (filtered.length === 0) {
+                            return (
+                              <Table.Row>
+                                <Table.Cell colSpan={5} className="py-8 text-center text-xs text-kumo-subtle">
+                                  No messages found matching criteria.
+                                </Table.Cell>
+                              </Table.Row>
+                            );
+                          }
+
+                          return filtered.map((m) => {
+                            const isSelected = selectedAdminMessage?.id === m.id;
+                            return (
+                              <Table.Row
+                                key={m.id}
+                                className={`cursor-pointer transition-colors ${
+                                  isSelected ? "bg-kumo-tint" : "hover:bg-kumo-tint/50"
+                                }`}
+                                onClick={() => setSelectedAdminMessage(m)}
+                              >
+                                <Table.Cell>
+                                  <div className="flex flex-col gap-0.5 text-xs">
+                                    <div className="flex items-center gap-1.5 font-medium text-kumo-default">
+                                      <span className="text-[10px] text-kumo-subtle">From:</span>
+                                      <span className="truncate max-w-[120px]">{m.sender?.name || "System"}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5 text-kumo-subtle">
+                                      <span className="text-[10px]">To:</span>
+                                      <span className="truncate max-w-[120px]">{m.receiver?.name || "Admin"}</span>
+                                    </div>
+                                  </div>
+                                </Table.Cell>
+
+                                <Table.Cell>
+                                  <div className="flex flex-col gap-1 max-w-[180px]">
+                                    <span className="truncate font-semibold text-xs text-kumo-default">
+                                      {m.subject}
+                                    </span>
+                                    <div className="flex items-center gap-1">
+                                      <Badge
+                                        variant={
+                                          m.type === "system"
+                                            ? "primary"
+                                            : m.type === "ticket"
+                                            ? "warning"
+                                            : "neutral"
+                                        }
+                                      >
+                                        {m.type}
+                                      </Badge>
+                                    </div>
+                                  </div>
+                                </Table.Cell>
+
+                                <Table.Cell>
+                                  <Badge
+                                    variant={
+                                      m.status === "unread"
+                                        ? "warning"
+                                        : m.status === "resolved" || m.status === "read"
+                                        ? "success"
+                                        : "neutral"
+                                    }
+                                  >
+                                    {m.status}
+                                  </Badge>
+                                </Table.Cell>
+
+                                <Table.Cell className="text-xs text-kumo-subtle whitespace-nowrap">
+                                  {new Date(m.createdAt).toLocaleDateString([], { month: "short", day: "numeric" })}
+                                </Table.Cell>
+
+                                <Table.Cell className="text-right">
+                                  <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleOpenEditMessage(m)}
+                                      title="Edit message"
+                                      className="rounded p-1 text-kumo-subtle hover:bg-kumo-control hover:text-kumo-brand"
+                                    >
+                                      <PencilSimple weight="thin" size={14} />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteMessage(m.id)}
+                                      title="Delete message"
+                                      className="rounded p-1 text-kumo-subtle hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40"
+                                    >
+                                      <Trash weight="thin" size={14} />
+                                    </button>
+                                  </div>
+                                </Table.Cell>
+                              </Table.Row>
+                            );
+                          });
+                        })()}
+                      </Table.Body>
+                    </Table>
+                  </LayerCard>
+                </div>
+
+                {/* Selected Message Inspector Pane */}
+                <div className="lg:col-span-5">
+                  {selectedAdminMessage ? (
+                    <LayerCard className="p-5 ring ring-kumo-line rounded-lg bg-kumo-base sticky top-4 flex flex-col gap-4">
+                      <div className="flex items-start justify-between border-b border-kumo-line pb-3">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-mono text-kumo-subtle">#{selectedAdminMessage.id}</span>
+                            <Badge
+                              variant={
+                                selectedAdminMessage.type === "system"
+                                  ? "primary"
+                                  : selectedAdminMessage.type === "ticket"
+                                  ? "warning"
+                                  : "neutral"
+                              }
+                            >
+                              {selectedAdminMessage.type}
+                            </Badge>
+                            <Badge
+                              variant={
+                                selectedAdminMessage.status === "unread"
+                                  ? "warning"
+                                  : "success"
+                              }
+                            >
+                              {selectedAdminMessage.status}
+                            </Badge>
+                          </div>
+                          <h2 className="text-sm font-semibold text-kumo-default mt-1">
+                            {selectedAdminMessage.subject}
+                          </h2>
+                        </div>
+
+                        <div className="flex items-center gap-1.5">
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => handleOpenEditMessage(selectedAdminMessage)}
+                          >
+                            <PencilSimple weight="thin" size={14} className="mr-1" />
+                            <span>Edit</span>
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => handleDeleteMessage(selectedAdminMessage.id)}
+                          >
+                            <Trash weight="thin" size={14} className="mr-1 text-red-600" />
+                            <span>Delete</span>
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* Sender & Receiver Info */}
+                      <div className="rounded border border-kumo-line bg-kumo-control/30 p-3 text-xs space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="text-kumo-subtle">From:</span>
+                          <span className="font-medium text-kumo-default">
+                            {selectedAdminMessage.sender?.name || "System"} ({selectedAdminMessage.sender?.email || "system@internal"})
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-kumo-subtle">To:</span>
+                          <span className="font-medium text-kumo-default">
+                            {selectedAdminMessage.receiver?.name || "Administration"} ({selectedAdminMessage.receiver?.email || "admin@internal"})
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-kumo-subtle">Date:</span>
+                          <span className="text-kumo-subtle">
+                            {new Date(selectedAdminMessage.createdAt).toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Content Box */}
+                      <div className="rounded border border-kumo-line bg-kumo-base p-4 text-xs leading-relaxed text-kumo-default whitespace-pre-wrap">
+                        {selectedAdminMessage.content}
+                      </div>
+                    </LayerCard>
+                  ) : (
+                    <div className="flex h-64 flex-col items-center justify-center rounded-lg border border-dashed border-kumo-line p-6 text-center text-xs text-kumo-subtle">
+                      <EnvelopeSimple weight="thin" size={32} className="mb-2 text-kumo-subtle" />
+                      Select a message to view details, edit its content, or delete it.
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Broadcast / Send Message Modal */}
+              {isBroadcastModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
+                  <div className="w-full max-w-lg rounded-xl border border-kumo-line bg-kumo-base p-6 shadow-xl space-y-4">
+                    <div className="flex items-center justify-between border-b border-kumo-line pb-3">
+                      <h3 className="text-sm font-semibold text-kumo-default">
+                        {broadcastTarget === "broadcast" ? "Broadcast message to all users" : "Send direct message from Administration"}
+                      </h3>
+                      <button
+                        type="button"
+                        onClick={() => setIsBroadcastModalOpen(false)}
+                        className="text-kumo-subtle hover:text-kumo-default"
+                      >
+                        <X weight="thin" size={18} />
+                      </button>
+                    </div>
+
+                    <form onSubmit={handleSendBroadcast} className="space-y-4">
+                      {/* Target Selector */}
+                      <div className="grid gap-1.5">
+                        <label className="text-xs font-medium text-kumo-default">Recipient target</label>
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setBroadcastTarget("broadcast")}
+                            className={`flex items-center justify-center gap-1.5 rounded border py-2 text-xs font-medium transition-colors ${
+                              broadcastTarget === "broadcast"
+                                ? "border-kumo-brand bg-kumo-brand/10 text-kumo-brand"
+                                : "border-kumo-line bg-kumo-control text-kumo-subtle hover:text-kumo-default"
+                            }`}
+                          >
+                            <Megaphone weight="thin" size={15} />
+                            <span>Broadcast (All {usersList.length} Users)</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setBroadcastTarget("direct");
+                              if (!broadcastReceiverId && usersList.length > 0) {
+                                setBroadcastReceiverId(usersList[0].id.toString());
+                              }
+                            }}
+                            className={`flex items-center justify-center gap-1.5 rounded border py-2 text-xs font-medium transition-colors ${
+                              broadcastTarget === "direct"
+                                ? "border-kumo-brand bg-kumo-brand/10 text-kumo-brand"
+                                : "border-kumo-line bg-kumo-control text-kumo-subtle hover:text-kumo-default"
+                            }`}
+                          >
+                            <PaperPlaneTilt weight="thin" size={15} />
+                            <span>Single User</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {broadcastTarget === "direct" && (
+                        <div className="grid gap-1.5">
+                          <label className="text-xs font-medium text-kumo-default">Select user</label>
+                          <select
+                            value={broadcastReceiverId}
+                            onChange={(e) => setBroadcastReceiverId(e.target.value)}
+                            className="w-full rounded border border-kumo-line bg-kumo-control py-2 px-3 text-xs text-kumo-default focus:border-kumo-brand focus:outline-none"
+                            required
+                          >
+                            {usersList.map((u) => (
+                              <option key={u.id} value={u.id}>
+                                {u.name} ({u.email}) - {u.role}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      <div className="grid gap-1.5">
+                        <label className="text-xs font-medium text-kumo-default">Subject</label>
+                        <input
+                          type="text"
+                          required
+                          value={broadcastSubject}
+                          onChange={(e) => setBroadcastSubject(e.target.value)}
+                          placeholder="e.g. Important Announcement: System maintenance"
+                          className="w-full rounded border border-kumo-line bg-kumo-control py-2 px-3 text-xs text-kumo-default placeholder:text-kumo-subtle focus:border-kumo-brand focus:outline-none"
+                        />
+                      </div>
+
+                      <div className="grid gap-1.5">
+                        <label className="text-xs font-medium text-kumo-default">Content</label>
+                        <textarea
+                          rows={4}
+                          required
+                          value={broadcastContent}
+                          onChange={(e) => setBroadcastContent(e.target.value)}
+                          placeholder="Write the message content here..."
+                          className="w-full rounded border border-kumo-line bg-kumo-control p-3 text-xs text-kumo-default placeholder:text-kumo-subtle focus:border-kumo-brand focus:outline-none resize-none"
+                        />
+                      </div>
+
+                      <div className="flex justify-end gap-2 pt-2 border-t border-kumo-line">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          type="button"
+                          onClick={() => setIsBroadcastModalOpen(false)}
+                        >
+                          <span>Cancel</span>
+                        </Button>
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          type="submit"
+                          disabled={broadcastSending}
+                        >
+                          <PaperPlaneTilt weight="thin" size={14} className="mr-1.5" />
+                          <span>{broadcastSending ? "Sending..." : broadcastTarget === "broadcast" ? "Send to all" : "Send message"}</span>
+                        </Button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
+
+              {/* Edit Message Modal */}
+              {editingMessage && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
+                  <div className="w-full max-w-lg rounded-xl border border-kumo-line bg-kumo-base p-6 shadow-xl space-y-4">
+                    <div className="flex items-center justify-between border-b border-kumo-line pb-3">
+                      <h3 className="text-sm font-semibold text-kumo-default">
+                        Edit Message #{editingMessage.id}
+                      </h3>
+                      <button
+                        type="button"
+                        onClick={() => setEditingMessage(null)}
+                        className="text-kumo-subtle hover:text-kumo-default"
+                      >
+                        <X weight="thin" size={18} />
+                      </button>
+                    </div>
+
+                    <form onSubmit={handleSaveEditMessage} className="space-y-4">
+                      <div className="grid gap-1.5">
+                        <label className="text-xs font-medium text-kumo-default">Subject</label>
+                        <input
+                          type="text"
+                          required
+                          value={editSubject}
+                          onChange={(e) => setEditSubject(e.target.value)}
+                          className="w-full rounded border border-kumo-line bg-kumo-control py-2 px-3 text-xs text-kumo-default focus:border-kumo-brand focus:outline-none"
+                        />
+                      </div>
+
+                      <div className="grid gap-1.5">
+                        <label className="text-xs font-medium text-kumo-default">Status</label>
+                        <select
+                          value={editStatus}
+                          onChange={(e) => setEditStatus(e.target.value)}
+                          className="w-full rounded border border-kumo-line bg-kumo-control py-2 px-3 text-xs text-kumo-default focus:border-kumo-brand focus:outline-none"
+                        >
+                          <option value="unread">Unread</option>
+                          <option value="read">Read</option>
+                          <option value="resolved">Resolved</option>
+                          <option value="archived">Archived</option>
+                        </select>
+                      </div>
+
+                      <div className="grid gap-1.5">
+                        <label className="text-xs font-medium text-kumo-default">Content</label>
+                        <textarea
+                          rows={5}
+                          required
+                          value={editContent}
+                          onChange={(e) => setEditContent(e.target.value)}
+                          className="w-full rounded border border-kumo-line bg-kumo-control p-3 text-xs text-kumo-default focus:border-kumo-brand focus:outline-none resize-none"
+                        />
+                      </div>
+
+                      <div className="flex justify-end gap-2 pt-2 border-t border-kumo-line">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          type="button"
+                          onClick={() => setEditingMessage(null)}
+                        >
+                          <span>Cancel</span>
+                        </Button>
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          type="submit"
+                          disabled={editSaving}
+                        >
+                          <FloppyDisk weight="thin" size={14} className="mr-1.5" />
+                          <span>{editSaving ? "Saving..." : "Save changes"}</span>
+                        </Button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
