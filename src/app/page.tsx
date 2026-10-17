@@ -239,27 +239,6 @@ export default function HomePage() {
 
       {/* Main Content Area */}
       <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-8 sm:px-6">
-        {/* Workspace Action Bar (Only shown when there is at least 1 project) */}
-        {!loadingProjects && projectsList.length > 0 && (
-          <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h1 className="text-xl font-semibold text-kumo-default">Projects & Workspace</h1>
-              <p className="text-xs text-kumo-subtle mt-0.5">
-                Manage your academic capstone projects, teammates, and advisor reviews.
-              </p>
-            </div>
-
-            <Button
-              variant="primary"
-              onClick={() => setIsCreateOpen(true)}
-              className="self-start sm:self-auto"
-            >
-              <Plus weight="thin" size={16} className="mr-1.5" />
-              <span>Create new project</span>
-            </Button>
-          </div>
-        )}
-
         {/* Projects Grid or Empty State */}
         {loadingProjects ? (
           <div className="flex h-64 items-center justify-center">
