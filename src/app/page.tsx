@@ -94,6 +94,33 @@ export default function HomePage() {
   const [isMemberDropdownOpen, setIsMemberDropdownOpen] = useState(false);
   const [advisorSearch, setAdvisorSearch] = useState("");
   const [isAdvisorDropdownOpen, setIsAdvisorDropdownOpen] = useState(false);
+  const advisorDropdownRef = useRef<HTMLDivElement>(null);
+  const memberDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdowns on click outside
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (
+        advisorDropdownRef.current &&
+        !advisorDropdownRef.current.contains(e.target as Node)
+      ) {
+        setIsAdvisorDropdownOpen(false);
+      }
+      if (
+        memberDropdownRef.current &&
+        !memberDropdownRef.current.contains(e.target as Node)
+      ) {
+        setIsMemberDropdownOpen(false);
+      }
+    };
+
+    if (isAdvisorDropdownOpen || isMemberDropdownOpen) {
+      document.addEventListener("mousedown", handleOutsideClick);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+    };
+  }, [isAdvisorDropdownOpen, isMemberDropdownOpen]);
 
   // Toast
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -436,15 +463,17 @@ export default function HomePage() {
               </div>
 
               {/* Advisor Selection (Dropdown & Role Filtering) */}
-              <div className="grid gap-1.5 relative">
+              <div className="grid gap-1.5 relative" ref={advisorDropdownRef}>
                 <label className="text-xs font-medium text-kumo-default">
                   Project advisor (อาจารย์ที่ปรึกษา)
                 </label>
 
                 {/* Unified Advisor Box */}
                 <div
-                  onClick={() => setIsAdvisorDropdownOpen(true)}
-                  className="flex items-center gap-2 rounded-md border border-kumo-line bg-kumo-control px-2.5 py-1.5 text-xs cursor-pointer"
+                  onClick={() => setIsAdvisorDropdownOpen(!isAdvisorDropdownOpen)}
+                  className={`flex items-center gap-2 rounded-md border bg-kumo-control px-2.5 py-1.5 text-xs cursor-pointer transition-colors ${
+                    isAdvisorDropdownOpen ? "border-kumo-brand ring-1 ring-kumo-brand" : "border-kumo-line"
+                  }`}
                 >
                   {selectedAdvisorId ? (
                     (() => {
@@ -480,20 +509,39 @@ export default function HomePage() {
                     </button>
                   )}
 
-                  <CaretDown weight="thin" size={14} className="text-kumo-subtle" />
+                  <CaretDown
+                    weight="thin"
+                    size={14}
+                    className={`text-kumo-subtle transition-transform duration-200 ${
+                      isAdvisorDropdownOpen ? "rotate-180" : ""
+                    }`}
+                  />
                 </div>
 
                 {/* Advisor Dropdown Options */}
                 {isAdvisorDropdownOpen && (
                   <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-52 overflow-y-auto rounded-md border border-kumo-line bg-kumo-base shadow-xl ring-1 ring-black/5 divide-y divide-kumo-line">
-                    <div className="p-2 border-b border-kumo-line bg-kumo-control/30">
-                      <input
-                        type="text"
-                        value={advisorSearch}
-                        onChange={(e) => setAdvisorSearch(e.target.value)}
-                        placeholder="Search advisor by name..."
-                        className="w-full rounded border border-kumo-line bg-kumo-base py-1 px-2 text-xs text-kumo-default placeholder:text-kumo-subtle focus:border-kumo-brand focus:outline-none"
-                      />
+                    <div className="p-2 border-b border-kumo-line bg-kumo-control/30 flex items-center justify-between gap-2">
+                      <div className="relative flex-1">
+                        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-2 text-kumo-subtle">
+                          <MagnifyingGlass weight="thin" size={13} />
+                        </div>
+                        <input
+                          type="text"
+                          value={advisorSearch}
+                          onChange={(e) => setAdvisorSearch(e.target.value)}
+                          placeholder="Search advisor by name or email..."
+                          className="w-full rounded border border-kumo-line bg-kumo-base py-1 pl-7 pr-2 text-xs text-kumo-default placeholder:text-kumo-subtle focus:border-kumo-brand focus:outline-none"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setIsAdvisorDropdownOpen(false)}
+                        className="text-kumo-subtle hover:text-kumo-default p-1"
+                        title="Close dropdown"
+                      >
+                        <X weight="thin" size={14} />
+                      </button>
                     </div>
 
                     {advisorCandidates
@@ -533,7 +581,7 @@ export default function HomePage() {
               </div>
 
               {/* Members Selection (Student Teammates) */}
-              <div className="grid gap-1.5 relative">
+              <div className="grid gap-1.5 relative" ref={memberDropdownRef}>
                 <label className="text-xs font-medium text-kumo-default">
                   Project members (สมาชิกกลุ่ม)
                 </label>
@@ -571,31 +619,47 @@ export default function HomePage() {
 
                 {/* Add Teammate Trigger */}
                 <div
-                  onClick={() => setIsMemberDropdownOpen(true)}
-                  className="flex items-center justify-between rounded-md border border-kumo-line bg-kumo-control px-2.5 py-1.5 text-xs cursor-pointer text-kumo-subtle hover:text-kumo-default"
+                  onClick={() => setIsMemberDropdownOpen(!isMemberDropdownOpen)}
+                  className={`flex items-center justify-between rounded-md border bg-kumo-control px-2.5 py-1.5 text-xs cursor-pointer transition-colors ${
+                    isMemberDropdownOpen
+                      ? "border-kumo-brand ring-1 ring-kumo-brand text-kumo-default"
+                      : "border-kumo-line text-kumo-subtle hover:text-kumo-default"
+                  }`}
                 >
                   <div className="flex items-center gap-2">
                     <Users weight="thin" size={16} />
                     <span>Click to search and add student teammates...</span>
                   </div>
-                  <CaretDown weight="thin" size={14} />
+                  <CaretDown
+                    weight="thin"
+                    size={14}
+                    className={`transition-transform duration-200 ${
+                      isMemberDropdownOpen ? "rotate-180" : ""
+                    }`}
+                  />
                 </div>
 
                 {/* Teammates Dropdown */}
                 {isMemberDropdownOpen && (
                   <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-52 overflow-y-auto rounded-md border border-kumo-line bg-kumo-base shadow-xl ring-1 ring-black/5 divide-y divide-kumo-line">
-                    <div className="p-2 border-b border-kumo-line bg-kumo-control/30 flex items-center justify-between">
-                      <input
-                        type="text"
-                        value={memberSearch}
-                        onChange={(e) => setMemberSearch(e.target.value)}
-                        placeholder="Search student by name or email..."
-                        className="w-full rounded border border-kumo-line bg-kumo-base py-1 px-2 text-xs text-kumo-default placeholder:text-kumo-subtle focus:border-kumo-brand focus:outline-none"
-                      />
+                    <div className="p-2 border-b border-kumo-line bg-kumo-control/30 flex items-center justify-between gap-2">
+                      <div className="relative flex-1">
+                        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-2 text-kumo-subtle">
+                          <MagnifyingGlass weight="thin" size={13} />
+                        </div>
+                        <input
+                          type="text"
+                          value={memberSearch}
+                          onChange={(e) => setMemberSearch(e.target.value)}
+                          placeholder="Search student by name or email..."
+                          className="w-full rounded border border-kumo-line bg-kumo-base py-1 pl-7 pr-2 text-xs text-kumo-default placeholder:text-kumo-subtle focus:border-kumo-brand focus:outline-none"
+                        />
+                      </div>
                       <button
                         type="button"
                         onClick={() => setIsMemberDropdownOpen(false)}
-                        className="text-kumo-subtle hover:text-kumo-default ml-2"
+                        className="text-kumo-subtle hover:text-kumo-default p-1"
+                        title="Close dropdown"
                       >
                         <X weight="thin" size={14} />
                       </button>
