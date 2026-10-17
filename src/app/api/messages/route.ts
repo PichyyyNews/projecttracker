@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { verifySession } from "@/lib/auth";
 import { db } from "@/db";
 import { messages, users } from "@/db/schema";
-import { eq, or, desc, and } from "drizzle-orm";
+import { eq, or, desc, and, isNull } from "drizzle-orm";
 
 export async function GET(req: Request) {
   try {
@@ -22,7 +22,7 @@ export async function GET(req: Request) {
     const url = new URL(req.url);
     const filter = url.searchParams.get("filter") || "all"; // all, system, direct, tickets
 
-    // Fetch messages where user is receiver OR sender
+    // Fetch inbox messages where user is receiver or system announcements
     const userMessages = await db
       .select({
         id: messages.id,
@@ -40,9 +40,7 @@ export async function GET(req: Request) {
       .where(
         or(
           eq(messages.receiverId, payload.id),
-          eq(messages.senderId, payload.id),
-          // If system broadcast (receiverId null and type system)
-          and(eq(messages.type, "system"))
+          and(eq(messages.type, "system"), or(isNull(messages.receiverId), eq(messages.receiverId, payload.id)))
         )
       )
       .orderBy(desc(messages.createdAt));

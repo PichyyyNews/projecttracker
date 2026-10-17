@@ -221,7 +221,7 @@ export default function HomePage() {
   );
 
   const advisorCandidates = contactsList.filter(
-    (u) => u.role === "advisor" || u.role === "instructor" || u.role === "admin"
+    (u) => u.id !== currentUser?.id && (u.role === "advisor" || u.role === "instructor" || u.role === "admin")
   );
 
   if (checkingAuth) {
