@@ -20,6 +20,7 @@ import {
   Square,
   Trash,
   Check,
+  CaretLeft,
 } from "@phosphor-icons/react";
 import { Button, LayerCard, Badge } from "@cloudflare/kumo";
 import UserAvatar from "@/components/UserAvatar";
@@ -82,6 +83,7 @@ interface MilestoneTimelineProps {
   };
   onRefresh?: () => void;
   onOpenEvaluationModal?: (m: MilestoneItem) => void;
+  onBack?: () => void;
 }
 
 export const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({
@@ -90,6 +92,7 @@ export const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({
   projectInfo,
   onRefresh,
   onOpenEvaluationModal,
+  onBack,
 }) => {
   const [selectedMilestone, setSelectedMilestone] = useState<MilestoneItem | null>(null);
   const [goalInput, setGoalInput] = useState("");
@@ -267,9 +270,19 @@ export const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({
       <LayerCard className="p-4 sm:p-5 ring ring-kumo-line rounded-xl bg-kumo-base shadow-xs">
         {projectInfo && (
           <div className="flex flex-col gap-3 border-b border-kumo-line pb-4 mb-4">
-            {/* Top row: Subject & Project Name on Left, Advisor & Members on Right */}
+            {/* Top row: Back button + Subject & Project Name on Left, Advisor & Members on Right */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
               <div className="flex items-center gap-2 min-w-0">
+                {onBack && (
+                  <button
+                    type="button"
+                    onClick={onBack}
+                    className="flex h-7 w-7 items-center justify-center rounded-lg border border-kumo-line bg-kumo-control/60 text-kumo-subtle hover:text-kumo-default hover:bg-kumo-control hover:border-kumo-brand/40 transition-colors shrink-0"
+                    title="Back to projects"
+                  >
+                    <CaretLeft weight="bold" size={15} />
+                  </button>
+                )}
                 <span className="rounded bg-kumo-brand/10 px-2 py-0.5 text-[10px] font-medium text-kumo-brand shrink-0">
                   {projectInfo.subjectName}
                 </span>
@@ -321,9 +334,12 @@ export const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({
             <p className="text-xs text-kumo-subtle">Sequential track progression from 0% to 100% completion</p>
           </div>
           <div className="flex items-center gap-2 self-start xs:self-auto">
-            <Badge variant="neutral">
-              {milestones.filter((m) => m.status === "approved").length} of {milestones.length} Milestones passed
-            </Badge>
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-kumo-control text-kumo-default border border-kumo-line">
+              <span className="text-kumo-brand font-semibold mr-1">
+                {milestones.filter((m) => m.status === "approved").length} of {milestones.length}
+              </span>{" "}
+              Milestones completed
+            </span>
           </div>
         </div>
 
@@ -331,7 +347,6 @@ export const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({
         <div className="relative py-4 px-2 sm:px-4">
           {(() => {
             // Calculate overall progress along the track (0% to 100%)
-            // Each segment (0-25, 25-50, 50-75, 75-100) represents 25% of the total track width.
             let overallTrackPercent = 0;
             const m25 = milestones.find((m) => m.stage === 25);
             const m50 = milestones.find((m) => m.stage === 50);
@@ -343,7 +358,7 @@ export const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({
               if (m.status === "approved") return 1;
               if (m.status === "in_progress" || m.status === "pending_inspection" || m.status === "needs_revision") {
                 const subPct = (m.taskPercentage || 0) / 100;
-                return Math.max(0.05, subPct); // at least 5% visual indicator if active
+                return Math.max(0.05, subPct);
               }
               return 0;
             };
@@ -370,14 +385,14 @@ export const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({
                 />
 
                 {/* 0% Origin Node */}
-                <div className="relative z-10 flex flex-col items-center">
+                <div className="relative z-10 flex flex-col items-center w-14 sm:w-20">
                   <div className="rounded-full bg-kumo-base p-1 ring-2 ring-emerald-500/20 shadow-xs">
                     <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400">
                       <CheckCircle weight="fill" size={16} />
                     </div>
                   </div>
                   <span className="mt-1.5 text-[11px] sm:text-xs font-semibold text-kumo-default">0%</span>
-                  <span className="text-[10px] text-kumo-subtle hidden xs:inline">Kickoff</span>
+                  <span className="text-[10px] text-kumo-subtle truncate text-center">Kickoff</span>
                 </div>
 
             {/* Milestone Nodes (25%, 50%, 75%, 100%) */}
@@ -414,7 +429,7 @@ export const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({
                 <div
                   key={m.id}
                   onClick={() => setSelectedMilestone(m)}
-                  className="relative z-10 flex flex-col items-center cursor-pointer group"
+                  className="relative z-10 flex flex-col items-center cursor-pointer group w-14 sm:w-20"
                 >
                   <div
                     className={`rounded-full bg-kumo-base p-1 ring-2 transition-all shadow-xs ${ringColor}`}
@@ -432,7 +447,7 @@ export const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({
                   >
                     {m.stage}%
                   </span>
-                  <span className="text-[10px] text-kumo-subtle max-w-[70px] sm:max-w-[100px] truncate text-center">
+                  <span className="text-[10px] text-kumo-subtle truncate text-center w-full px-0.5">
                     {m.status === "approved"
                       ? "Approved"
                       : m.status === "pending_inspection"

@@ -401,6 +401,7 @@ function AdvisorPortalContent() {
               onOpenEvaluationModal={(m) => {
                 setEvaluatingMilestone(m);
               }}
+              onBack={() => setSelectedProject(null)}
             />
           </div>
         ) : (

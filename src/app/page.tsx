@@ -289,6 +289,7 @@ export default function HomePage() {
                   currentUser?.role === "admin"
                 }
                 onRefresh={() => fetchProjectMilestones(selectedTrackProject.id)}
+                onBack={() => setSelectedTrackProject(null)}
               />
             )}
           </div>
