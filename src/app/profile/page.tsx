@@ -321,15 +321,15 @@ export default function ProfilePage() {
                     )}
                   </button>
 
-                  {/* Right: Delete Photo (Light Red) */}
+                  {/* Right: Delete Photo */}
                   {formData.avatarUrl && (
                     <button
                       type="button"
                       onClick={handleRemoveAvatar}
                       title="Remove photo"
-                      className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-red-100 text-red-600 border border-red-300 ring-2 ring-white shadow-sm transition-transform active:scale-95"
+                      className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-rose-50 text-rose-600 border border-rose-200 ring-2 ring-white shadow-sm transition-transform active:scale-95 hover:bg-rose-100"
                     >
-                      <Trash weight="bold" size={14} />
+                      <Trash weight="bold" size={13} />
                     </button>
                   )}
                 </div>
@@ -499,8 +499,8 @@ export default function ProfilePage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
           <div className="w-full max-w-sm rounded-xl border border-kumo-line bg-kumo-base p-6 shadow-xl space-y-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600 dark:bg-red-950/40 dark:text-red-400">
-                <Trash weight="thin" size={20} />
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-rose-500/10 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400 ring-1 ring-rose-500/20">
+                <Trash weight="bold" size={18} />
               </div>
               <div className="flex flex-col">
                 <h3 className="text-sm font-semibold text-kumo-default">Remove profile photo</h3>
