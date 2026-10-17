@@ -545,16 +545,16 @@ export const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({
             </div>
           )}
 
-          {/* Milestone Sub-Tasks & Work Breakdown Checklist */}
-          <div className="rounded-lg border border-kumo-line bg-kumo-base p-4 space-y-3">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-kumo-line pb-3">
+          {/* Milestone Sub-Tasks & Work Breakdown Checklist (Flat, No Nested Card Borders) */}
+          <div className="space-y-3 pt-1">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <div>
                 <div className="flex items-center gap-2">
                   <span className="font-semibold text-xs text-kumo-default">
                     Milestone Jobs Checklist
                   </span>
                   <span className="rounded bg-kumo-control px-2 py-0.5 text-[10px] font-medium text-kumo-subtle">
-                    {selectedMilestone.totalTasks || 0} jobs total
+                    {selectedMilestone.totalTasks || 0} jobs
                   </span>
                 </div>
                 <p className="text-[11px] text-kumo-subtle mt-0.5">
@@ -564,7 +564,7 @@ export const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({
 
               {/* Job Progress & Remaining Indicator */}
               <div className="flex items-center gap-3">
-                <div className="flex flex-col items-end text-right">
+                <div className="flex flex-col items-start sm:items-end sm:text-right">
                   <div className="flex items-center gap-1.5 text-xs">
                     <span className="font-bold text-kumo-brand">
                       {selectedMilestone.taskPercentage || 0}%
@@ -575,7 +575,7 @@ export const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({
                   </div>
                   <span className="text-[10px] text-kumo-subtle">
                     {(selectedMilestone.totalTasks || 0) - (selectedMilestone.completedTasks || 0) === 0 && (selectedMilestone.totalTasks || 0) > 0 ? (
-                      <span className="text-emerald-600 font-medium">All jobs finished for this stage!</span>
+                      <span className="text-emerald-600 dark:text-emerald-400 font-medium">All jobs finished for this stage!</span>
                     ) : (
                       <span>
                         {Math.max(0, (selectedMilestone.totalTasks || 0) - (selectedMilestone.completedTasks || 0))} job(s) remaining for {selectedMilestone.stage}%
@@ -587,17 +587,17 @@ export const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({
             </div>
 
             {/* Sub-Progress Bar */}
-            <div className="h-1.5 w-full bg-kumo-control rounded-full overflow-hidden">
+            <div className="h-1 w-full bg-kumo-control rounded-full overflow-hidden">
               <div
                 className="h-full bg-kumo-brand transition-all duration-300"
                 style={{ width: `${selectedMilestone.taskPercentage || 0}%` }}
               />
             </div>
 
-            {/* Task Checklist Items */}
-            <div className="space-y-1.5 pt-1">
+            {/* Task Checklist Items - Clean Flat Borderless Rows */}
+            <div className="divide-y divide-kumo-line/40">
               {(!selectedMilestone.tasks || selectedMilestone.tasks.length === 0) ? (
-                <div className="text-center py-4 text-xs text-kumo-subtle bg-kumo-control/40 rounded-md">
+                <div className="text-center py-3 text-xs text-kumo-subtle">
                   No sub-jobs added yet for this milestone. Add your first job below to start tracking.
                 </div>
               ) : (
@@ -606,11 +606,7 @@ export const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({
                   return (
                     <div
                       key={task.id}
-                      className={`flex items-center justify-between p-2 rounded-md border transition-colors ${
-                        task.isCompleted
-                          ? "border-emerald-500/20 bg-emerald-500/5 text-kumo-subtle"
-                          : "border-kumo-line bg-kumo-base hover:bg-kumo-tint/40 text-kumo-default"
-                      }`}
+                      className="group flex items-center justify-between py-2 px-1 hover:bg-kumo-tint/30 rounded transition-colors"
                     >
                       <button
                         type="button"
@@ -621,9 +617,9 @@ export const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({
                         {task.isCompleted ? (
                           <CheckSquare weight="fill" size={17} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
                         ) : (
-                          <Square weight="thin" size={17} className="text-kumo-subtle hover:text-kumo-brand shrink-0" />
+                          <Square weight="thin" size={17} className="text-kumo-subtle group-hover:text-kumo-brand shrink-0" />
                         )}
-                        <span className={`text-xs truncate ${task.isCompleted ? "line-through opacity-75" : "font-medium"}`}>
+                        <span className={`text-xs truncate ${task.isCompleted ? "line-through opacity-60 text-kumo-subtle" : "text-kumo-default"}`}>
                           {task.title}
                         </span>
                       </button>
@@ -632,7 +628,7 @@ export const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({
                         <button
                           type="button"
                           onClick={() => handleDeleteTask(task.id)}
-                          className="text-kumo-subtle hover:text-rose-500 p-1 transition-colors"
+                          className="opacity-0 group-hover:opacity-100 text-kumo-subtle hover:text-rose-500 p-1 transition-opacity"
                           title="Delete job"
                         >
                           <Trash weight="thin" size={14} />
@@ -646,7 +642,7 @@ export const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({
 
             {/* Add New Job Input */}
             {selectedMilestone.status !== "approved" && selectedMilestone.status !== "locked" && (
-              <form onSubmit={handleAddTask} className="flex gap-2 pt-2 border-t border-kumo-line">
+              <form onSubmit={handleAddTask} className="flex gap-2 pt-1">
                 <input
                   type="text"
                   value={newTaskTitle}
