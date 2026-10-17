@@ -325,17 +325,19 @@ export const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({
         </div>
 
         {/* Timeline Bar Track */}
-        <div className="relative py-4 px-1 sm:px-4">
+        <div className="relative py-4 px-2 sm:px-4">
           <div className="relative flex items-center justify-between w-full">
-            {/* Full Connecting Base Line */}
-            <div className="absolute top-4 sm:top-4.5 left-4 right-4 sm:left-6 sm:right-6 h-1 -translate-y-1/2 bg-kumo-line rounded-full z-0" />
+            {/* Full Connecting Base Line - Runs directly through center of all nodes */}
+            <div className="absolute top-[18px] sm:top-5 left-4 right-4 sm:left-6 sm:right-6 h-1 -translate-y-1/2 bg-kumo-line rounded-full z-0" />
 
             {/* 0% Origin Node */}
             <div className="relative z-10 flex flex-col items-center">
-              <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 ring-2 sm:ring-4 ring-kumo-base shadow-xs">
-                <CheckCircle weight="fill" size={16} />
+              <div className="rounded-full bg-kumo-base p-1 ring-1 ring-kumo-line/40 shadow-xs">
+                <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">
+                  <CheckCircle weight="fill" size={17} />
+                </div>
               </div>
-              <span className="mt-1.5 text-[10px] sm:text-xs font-semibold text-kumo-default">0%</span>
+              <span className="mt-1 text-[10px] sm:text-xs font-semibold text-kumo-default">0%</span>
               <span className="text-[9px] sm:text-[10px] text-kumo-subtle hidden xs:inline">Kickoff</span>
             </div>
 
@@ -351,17 +353,17 @@ export const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({
               let nodeBg = "bg-kumo-control text-kumo-subtle";
 
               if (isApproved) {
-                iconNode = <CheckCircle weight="fill" size={16} className="sm:text-lg" />;
-                nodeBg = "bg-emerald-500/15 text-emerald-600";
+                iconNode = <CheckCircle weight="fill" size={17} className="sm:text-lg" />;
+                nodeBg = "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400";
               } else if (isPending) {
-                iconNode = <Clock weight="fill" size={16} className="sm:text-lg" />;
-                nodeBg = "bg-amber-500/15 text-amber-600 animate-pulse";
+                iconNode = <Clock weight="fill" size={17} className="sm:text-lg" />;
+                nodeBg = "bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400 animate-pulse";
               } else if (isNeedsRevision) {
-                iconNode = <WarningCircle weight="fill" size={16} className="sm:text-lg" />;
-                nodeBg = "bg-rose-500/15 text-rose-600";
+                iconNode = <WarningCircle weight="fill" size={17} className="sm:text-lg" />;
+                nodeBg = "bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400";
               } else if (isInProgress) {
-                iconNode = <Sparkle weight="fill" size={16} className="sm:text-lg" />;
-                nodeBg = "bg-kumo-brand/15 text-kumo-brand";
+                iconNode = <Sparkle weight="fill" size={17} className="sm:text-lg" />;
+                nodeBg = "bg-blue-50 text-kumo-brand dark:bg-blue-950/40";
               }
 
               return (
@@ -373,14 +375,20 @@ export const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({
                   }`}
                 >
                   <div
-                    className={`flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full ring-2 sm:ring-4 transition-all shadow-xs ${nodeBg} ${
-                      isSelected ? "ring-kumo-brand" : "ring-kumo-base"
+                    className={`rounded-full bg-kumo-base p-1 ring-2 transition-all shadow-xs ${
+                      isSelected
+                        ? "ring-kumo-brand"
+                        : "ring-kumo-line/60 group-hover:ring-kumo-brand/40"
                     }`}
                   >
-                    {iconNode}
+                    <div
+                      className={`flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full ${nodeBg}`}
+                    >
+                      {iconNode}
+                    </div>
                   </div>
                   <span
-                    className={`mt-1.5 text-[10px] sm:text-xs font-semibold transition-colors ${
+                    className={`mt-1 text-[10px] sm:text-xs font-semibold transition-colors ${
                       isSelected ? "text-kumo-brand" : "text-kumo-default"
                     }`}
                   >
