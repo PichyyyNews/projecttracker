@@ -329,20 +329,56 @@ export const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({
 
         {/* Timeline Bar Track */}
         <div className="relative py-4 px-2 sm:px-4">
-          <div className="relative flex items-center justify-between w-full">
-            {/* Full Connecting Base Line - Runs directly through center of all node circles */}
-            <div className="absolute top-4 sm:top-[18px] left-4 right-4 sm:left-6 sm:right-6 h-0.5 -translate-y-1/2 bg-kumo-line z-0 pointer-events-none" />
+          {(() => {
+            // Calculate overall progress along the track (0% to 100%)
+            // Each segment (0-25, 25-50, 50-75, 75-100) represents 25% of the total track width.
+            let overallTrackPercent = 0;
+            const m25 = milestones.find((m) => m.stage === 25);
+            const m50 = milestones.find((m) => m.stage === 50);
+            const m75 = milestones.find((m) => m.stage === 75);
+            const m100 = milestones.find((m) => m.stage === 100);
 
-            {/* 0% Origin Node */}
-            <div className="relative z-10 flex flex-col items-center">
-              <div className="rounded-full bg-kumo-base p-1 ring-2 ring-emerald-500/20 shadow-xs">
-                <div className="flex h-6 w-6 sm:h-7 sm:w-7 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400">
-                  <CheckCircle weight="fill" size={15} />
+            const getSegmentProgress = (m?: MilestoneItem) => {
+              if (!m) return 0;
+              if (m.status === "approved") return 1;
+              if (m.status === "in_progress" || m.status === "pending_inspection" || m.status === "needs_revision") {
+                const subPct = (m.taskPercentage || 0) / 100;
+                return Math.max(0.05, subPct); // at least 5% visual indicator if active
+              }
+              return 0;
+            };
+
+            const seg1 = getSegmentProgress(m25);
+            const seg2 = m25?.status === "approved" ? getSegmentProgress(m50) : 0;
+            const seg3 = m50?.status === "approved" ? getSegmentProgress(m75) : 0;
+            const seg4 = m75?.status === "approved" ? getSegmentProgress(m100) : 0;
+
+            overallTrackPercent = (seg1 + seg2 + seg3 + seg4) * 25;
+
+            return (
+              <div className="relative flex items-center justify-between w-full">
+                {/* Background Track Line */}
+                <div className="absolute top-4 sm:top-[18px] left-4 right-4 sm:left-6 sm:right-6 h-0.5 -translate-y-1/2 bg-kumo-line z-0 pointer-events-none" />
+
+                {/* Dynamic Active Progress Fill Bar */}
+                <div
+                  className="absolute top-4 sm:top-[18px] left-4 sm:left-6 h-0.5 -translate-y-1/2 bg-gradient-to-r from-emerald-500 to-kumo-brand z-0 transition-all duration-500 ease-out pointer-events-none"
+                  style={{
+                    width: `calc((100% - ${typeof window !== "undefined" && window.innerWidth < 640 ? "32px" : "48px"}) * ${overallTrackPercent / 100})`,
+                    maxWidth: "calc(100% - 32px)",
+                  }}
+                />
+
+                {/* 0% Origin Node */}
+                <div className="relative z-10 flex flex-col items-center">
+                  <div className="rounded-full bg-kumo-base p-1 ring-2 ring-emerald-500/20 shadow-xs">
+                    <div className="flex h-6 w-6 sm:h-7 sm:w-7 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400">
+                      <CheckCircle weight="fill" size={15} />
+                    </div>
+                  </div>
+                  <span className="mt-1.5 text-[11px] sm:text-xs font-semibold text-kumo-default">0%</span>
+                  <span className="text-[10px] text-kumo-subtle hidden xs:inline">Kickoff</span>
                 </div>
-              </div>
-              <span className="mt-1.5 text-[11px] sm:text-xs font-semibold text-kumo-default">0%</span>
-              <span className="text-[10px] text-kumo-subtle hidden xs:inline">Kickoff</span>
-            </div>
 
             {/* Milestone Nodes (25%, 50%, 75%, 100%) */}
             {milestones.map((m) => {
@@ -415,8 +451,10 @@ export const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({
               );
             })}
           </div>
-        </div>
-      </LayerCard>
+        );
+      })()}
+    </div>
+  </LayerCard>
 
       {/* 2. SELECTED MILESTONE DETAILS & SUBMISSION CARD */}
       {selectedMilestone && (
