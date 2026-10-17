@@ -80,21 +80,38 @@ export async function GET(req: Request) {
         .where(inArray(projectMembers.projectId, allProjectIds));
     }
 
-    const enriched = userProjects.map((p) => {
-      const pMembers = allMembers
-        .filter((m) => m.projectId === p.id)
-        .map((m) => ({
-          ...m,
-          user: userMap.get(m.userId),
-        }));
+    const enriched = await Promise.all(
+      userProjects.map(async (p) => {
+        const pMembers = allMembers
+          .filter((m) => m.projectId === p.id)
+          .map((m) => ({
+            ...m,
+            user: userMap.get(m.userId),
+          }));
 
-      return {
-        ...p,
-        creator: userMap.get(p.creatorId),
-        advisor: p.advisorId ? userMap.get(p.advisorId) : null,
-        members: pMembers,
-      };
-    });
+        // Dynamic sync: If project is currently 'pending' but has NO pending members left and at least one accepted member, auto-promote to active
+        let currentStatus = p.status;
+        if (currentStatus === "pending") {
+          const hasPending = pMembers.some((m) => m.status === "pending");
+          const hasAccepted = pMembers.some((m) => m.status === "accepted");
+          if (!hasPending && hasAccepted) {
+            currentStatus = "active";
+            await db
+              .update(projects)
+              .set({ status: "active", updatedAt: new Date() })
+              .where(eq(projects.id, p.id));
+          }
+        }
+
+        return {
+          ...p,
+          status: currentStatus,
+          creator: userMap.get(p.creatorId),
+          advisor: p.advisorId ? userMap.get(p.advisorId) : null,
+          members: pMembers,
+        };
+      })
+    );
 
     return NextResponse.json({ success: true, data: enriched });
   } catch (error: any) {
@@ -130,7 +147,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: "Subject / course name is required" }, { status: 400 });
     }
 
-    // 1. Create project
+    // Check if project has any pending invitations to wait for
+    const validMemberIds = Array.isArray(memberIds)
+      ? memberIds.map((id: any) => parseInt(id, 10)).filter((id: number) => !isNaN(id) && id !== payload.id)
+      : [];
+    const hasPendingInvitations = validMemberIds.length > 0 || Boolean(advisorId);
+
+    // 1. Create project (active if solo/no invitations, pending if waiting for invites)
     const [newProject] = await db
       .insert(projects)
       .values({
@@ -139,7 +162,7 @@ export async function POST(req: Request) {
         description: description ? description.trim() : null,
         creatorId: payload.id,
         advisorId: advisorId ? parseInt(advisorId, 10) : null,
-        status: "pending",
+        status: hasPendingInvitations ? "pending" : "active",
       })
       .returning();
 
@@ -153,10 +176,6 @@ export async function POST(req: Request) {
     });
 
     // 3. Add members with status 'pending' and send invitation mail
-    const validMemberIds = Array.isArray(memberIds)
-      ? memberIds.map((id: any) => parseInt(id, 10)).filter((id: number) => !isNaN(id) && id !== payload.id)
-      : [];
-
     for (const memId of validMemberIds) {
       await db.insert(projectMembers).values({
         projectId: newProject.id,

@@ -55,6 +55,23 @@ export async function POST(req: Request) {
         .where(eq(projects.id, projectId));
     }
 
+    // Check all members status for this project
+    const allMembers = await db
+      .select({ status: projectMembers.status })
+      .from(projectMembers)
+      .where(eq(projectMembers.projectId, projectId));
+
+    // If there are NO pending members left and at least one accepted member, transition project to active
+    const hasPending = allMembers.some((m) => m.status === "pending");
+    const hasAccepted = allMembers.some((m) => m.status === "accepted");
+
+    if (!hasPending && hasAccepted) {
+      await db
+        .update(projects)
+        .set({ status: "active", updatedAt: new Date() })
+        .where(eq(projects.id, projectId));
+    }
+
     // Get project details to send feedback message back to creator
     const [project] = await db.select().from(projects).where(eq(projects.id, projectId));
     if (project && project.creatorId) {
