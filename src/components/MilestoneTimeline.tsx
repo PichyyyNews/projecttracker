@@ -182,37 +182,37 @@ export const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({
   return (
     <div className="flex flex-col gap-6">
       {/* 1. HORIZONTAL TIMELINE & PROJECT HEADER IN ONE CARD */}
-      <LayerCard className="p-5 ring ring-kumo-line rounded-xl bg-kumo-base shadow-xs overflow-x-auto">
+      <LayerCard className="p-4 sm:p-5 ring ring-kumo-line rounded-xl bg-kumo-base shadow-xs">
         {projectInfo && (
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-kumo-line pb-4 mb-4">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="rounded bg-kumo-brand/10 px-2 py-0.5 text-[10px] font-medium text-kumo-brand">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="rounded bg-kumo-brand/10 px-2 py-0.5 text-[10px] font-medium text-kumo-brand shrink-0">
                   {projectInfo.subjectName}
                 </span>
-                <h1 className="text-base font-bold text-kumo-default">{projectInfo.name}</h1>
+                <h1 className="text-base font-bold text-kumo-default truncate">{projectInfo.name}</h1>
               </div>
               {projectInfo.description && (
-                <p className="mt-0.5 text-xs text-kumo-subtle">{projectInfo.description}</p>
+                <p className="mt-1 text-xs text-kumo-subtle line-clamp-2">{projectInfo.description}</p>
               )}
             </div>
 
-            <div className="flex items-center gap-4 text-xs">
+            <div className="flex items-center gap-4 text-xs flex-wrap sm:flex-nowrap">
               {projectInfo.advisor && (
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 shrink-0">
                   <span className="text-kumo-subtle">Advisor:</span>
                   <UserAvatar
                     src={projectInfo.advisor.avatarUrl}
                     name={projectInfo.advisor.name}
                     size={20}
                   />
-                  <span className="font-semibold text-kumo-default">
+                  <span className="font-semibold text-kumo-default truncate max-w-[120px] sm:max-w-none">
                     {projectInfo.advisor.name}
                   </span>
                 </div>
               )}
               {projectInfo.members && projectInfo.members.length > 0 && (
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 shrink-0">
                   <span className="text-kumo-subtle">Members:</span>
                   <div className="flex items-center -space-x-1.5">
                     {projectInfo.members.map((m) => (
@@ -230,12 +230,12 @@ export const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({
           </div>
         )}
 
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col xs:flex-row xs:items-center justify-between gap-2 mb-4">
           <div>
             <h3 className="text-sm font-semibold text-kumo-default">Project milestone timeline</h3>
             <p className="text-xs text-kumo-subtle">Sequential track progression from 0% to 100% completion</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 self-start xs:self-auto">
             <Badge variant="neutral">
               {milestones.filter((m) => m.status === "approved").length} of {milestones.length} Milestones passed
             </Badge>
@@ -243,81 +243,82 @@ export const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({
         </div>
 
         {/* Timeline Bar Track */}
-        <div className="relative flex items-center justify-between min-w-[560px] py-4 px-3">
-          {/* Connecting Track Line */}
-          <div className="absolute top-1/2 left-8 right-8 h-1 -translate-y-1/2 bg-kumo-control -z-0" />
+        <div className="relative py-4 px-1 sm:px-4">
+          <div className="relative flex items-center justify-between w-full">
+            {/* Full Connecting Base Line */}
+            <div className="absolute top-4 sm:top-4.5 left-4 right-4 sm:left-6 sm:right-6 h-1 -translate-y-1/2 bg-kumo-line rounded-full z-0" />
 
-          {/* 0% Origin Node */}
-          <div className="relative z-10 flex flex-col items-center">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 ring-4 ring-kumo-base">
-              <CheckCircle weight="fill" size={18} />
-            </div>
-            <span className="mt-2 text-[11px] font-semibold text-kumo-default">0%</span>
-            <span className="text-[10px] text-kumo-subtle">Kickoff</span>
-          </div>
-
-          {/* Milestone Nodes (25%, 50%, 75%, 100%) */}
-          {milestones.map((m) => {
-            const isSelected = selectedMilestone?.id === m.id;
-            const isApproved = m.status === "approved";
-            const isPending = m.status === "pending_inspection";
-            const isNeedsRevision = m.status === "needs_revision";
-            const isInProgress = m.status === "in_progress";
-            const isLocked = m.status === "locked";
-
-            let iconNode = <Lock weight="thin" size={16} />;
-            let nodeBg = "bg-kumo-control text-kumo-subtle";
-
-            if (isApproved) {
-              iconNode = <CheckCircle weight="fill" size={18} />;
-              nodeBg = "bg-emerald-500/10 text-emerald-600";
-            } else if (isPending) {
-              iconNode = <Clock weight="fill" size={18} />;
-              nodeBg = "bg-amber-500/10 text-amber-600 animate-pulse";
-            } else if (isNeedsRevision) {
-              iconNode = <WarningCircle weight="fill" size={18} />;
-              nodeBg = "bg-rose-500/10 text-rose-600";
-            } else if (isInProgress) {
-              iconNode = <Sparkle weight="fill" size={18} />;
-              nodeBg = "bg-kumo-brand/10 text-kumo-brand";
-            }
-
-            return (
-              <div
-                key={m.id}
-                onClick={() => setSelectedMilestone(m)}
-                className={`relative z-10 flex flex-col items-center cursor-pointer group transition-transform ${
-                  isSelected ? "scale-105" : "hover:scale-105"
-                }`}
-              >
-                <div
-                  className={`flex h-9 w-9 items-center justify-center rounded-full ring-4 transition-all ${nodeBg} ${
-                    isSelected ? "ring-kumo-brand" : "ring-kumo-base"
-                  }`}
-                >
-                  {iconNode}
-                </div>
-                <span
-                  className={`mt-2 text-[11px] font-semibold transition-colors ${
-                    isSelected ? "text-kumo-brand" : "text-kumo-default"
-                  }`}
-                >
-                  {m.stage}%
-                </span>
-                <span className="text-[10px] text-kumo-subtle max-w-[90px] truncate text-center">
-                  {m.status === "approved"
-                    ? "Approved"
-                    : m.status === "pending_inspection"
-                    ? "Inspection"
-                    : m.status === "needs_revision"
-                    ? "Needs fix"
-                    : m.status === "in_progress"
-                    ? "In progress"
-                    : "Locked"}
-                </span>
+            {/* 0% Origin Node */}
+            <div className="relative z-10 flex flex-col items-center">
+              <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 ring-2 sm:ring-4 ring-kumo-base shadow-xs">
+                <CheckCircle weight="fill" size={16} />
               </div>
-            );
-          })}
+              <span className="mt-1.5 text-[10px] sm:text-xs font-semibold text-kumo-default">0%</span>
+              <span className="text-[9px] sm:text-[10px] text-kumo-subtle hidden xs:inline">Kickoff</span>
+            </div>
+
+            {/* Milestone Nodes (25%, 50%, 75%, 100%) */}
+            {milestones.map((m, idx) => {
+              const isSelected = selectedMilestone?.id === m.id;
+              const isApproved = m.status === "approved";
+              const isPending = m.status === "pending_inspection";
+              const isNeedsRevision = m.status === "needs_revision";
+              const isInProgress = m.status === "in_progress";
+
+              let iconNode = <Lock weight="thin" size={14} className="sm:text-base" />;
+              let nodeBg = "bg-kumo-control text-kumo-subtle";
+
+              if (isApproved) {
+                iconNode = <CheckCircle weight="fill" size={16} className="sm:text-lg" />;
+                nodeBg = "bg-emerald-500/15 text-emerald-600";
+              } else if (isPending) {
+                iconNode = <Clock weight="fill" size={16} className="sm:text-lg" />;
+                nodeBg = "bg-amber-500/15 text-amber-600 animate-pulse";
+              } else if (isNeedsRevision) {
+                iconNode = <WarningCircle weight="fill" size={16} className="sm:text-lg" />;
+                nodeBg = "bg-rose-500/15 text-rose-600";
+              } else if (isInProgress) {
+                iconNode = <Sparkle weight="fill" size={16} className="sm:text-lg" />;
+                nodeBg = "bg-kumo-brand/15 text-kumo-brand";
+              }
+
+              return (
+                <div
+                  key={m.id}
+                  onClick={() => setSelectedMilestone(m)}
+                  className={`relative z-10 flex flex-col items-center cursor-pointer group transition-transform ${
+                    isSelected ? "scale-105" : "hover:scale-105"
+                  }`}
+                >
+                  <div
+                    className={`flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full ring-2 sm:ring-4 transition-all shadow-xs ${nodeBg} ${
+                      isSelected ? "ring-kumo-brand" : "ring-kumo-base"
+                    }`}
+                  >
+                    {iconNode}
+                  </div>
+                  <span
+                    className={`mt-1.5 text-[10px] sm:text-xs font-semibold transition-colors ${
+                      isSelected ? "text-kumo-brand" : "text-kumo-default"
+                    }`}
+                  >
+                    {m.stage}%
+                  </span>
+                  <span className="text-[9px] sm:text-[10px] text-kumo-subtle max-w-[65px] sm:max-w-[90px] truncate text-center">
+                    {m.status === "approved"
+                      ? "Approved"
+                      : m.status === "pending_inspection"
+                      ? "Inspect"
+                      : m.status === "needs_revision"
+                      ? "Revision"
+                      : m.status === "in_progress"
+                      ? "In progress"
+                      : "Locked"}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </LayerCard>
 
